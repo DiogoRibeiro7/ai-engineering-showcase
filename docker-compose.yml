@@ -1,0 +1,11 @@
+services:
+  ai-showcase:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      AI_SHOWCASE_DATA_PATH: data/sample_feedback.csv
+      AI_SHOWCASE_INDEX_PATH: .artifacts/vector_store.json
+      AI_SHOWCASE_LLM_PROVIDER: local
+    volumes:
+      - ./.artifacts:/app/.artifacts

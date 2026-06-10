@@ -1,0 +1,13 @@
+feedback_id,customer_segment,channel,rating,text,created_at
+fb-001,enterprise,support_ticket,2,"Implementation took three weeks longer than expected. We also had no clear onboarding checklist and did not know who owned each setup step.",2026-01-08T09:20:00
+fb-002,mid_market,app_review,4,"The dashboard is useful and the alerts helped my team react faster, but the export feature failed twice when we needed a board report.",2026-01-14T14:10:00
+fb-003,startup,nps_survey,5,"Great product for a small team. Setup was fast and the default templates saved us several hours.",2026-01-20T11:00:00
+fb-004,enterprise,sales_call,2,"Pricing was difficult to explain internally. The renewal discussion became tense because the value was not connected to the features we use most.",2026-02-02T16:30:00
+fb-005,enterprise,support_ticket,1,"Our Salesforce integration broke after the last release. Support answered quickly, but the workaround was manual and caused reporting delays.",2026-02-10T10:15:00
+fb-006,mid_market,community,3,"The product is strong, but documentation for advanced automations is thin. We had to ask support for examples that should be public.",2026-02-18T18:40:00
+fb-007,enterprise,nps_survey,2,"Onboarding felt fragmented. Sales promised one workflow, customer success had another checklist, and product setup showed no progress dashboard.",2026-03-03T08:45:00
+fb-008,startup,app_review,4,"The new workflow builder is much better. Latency is still noticeable when we load large customer lists.",2026-03-12T13:25:00
+fb-009,enterprise,support_ticket,2,"We did not know who owned the onboarding checklist. The customer success manager was helpful, but the product did not show next steps or blockers.",2026-03-17T15:50:00
+fb-010,mid_market,sales_call,3,"We need a HubSpot integration before we can expand usage. The current CSV process works, but it is too slow for weekly operations.",2026-03-30T12:05:00
+fb-011,enterprise,community,1,"Exports failed during month-end reporting. The error message was generic, so the analytics team could not tell whether the issue was permissions or data size.",2026-04-04T09:35:00
+fb-012,mid_market,nps_survey,4,"Support has improved a lot. Faster responses and clearer ticket updates made the last incident easier to manage.",2026-04-15T17:05:00
