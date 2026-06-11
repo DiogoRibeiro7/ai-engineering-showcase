@@ -1,0 +1,16 @@
+# Example experiment configuration for `ai-showcase experiment run`.
+# Runs fully locally with the deterministic LLM provider; no API keys needed.
+name: hybrid-baseline
+description: Hybrid retrieval baseline over the sample feedback dataset.
+dataset_path: data/sample_feedback.csv
+queries_path: examples/queries.jsonl
+output_dir: .artifacts/experiments/hybrid-baseline
+chunk_size: 80
+chunk_overlap: 16
+top_k: 4
+embedding_provider: hashing
+embedding_dim: 512
+llm_provider: local
+retriever_type: hybrid
+dense_weight: 0.6
+lexical_weight: 0.4

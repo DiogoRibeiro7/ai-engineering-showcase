@@ -33,6 +33,7 @@ ai-engineering-showcase/
 │   ├── data_contracts.py     # Dataset validation and data contracts
 │   ├── embeddings.py         # Hashing embedding model
 │   ├── evaluation.py         # Retrieval and answer-quality metrics
+│   ├── experiments.py        # Repeatable experiment runner
 │   ├── ingestion.py          # CSV feedback loader
 │   ├── lexical_search.py     # BM25 lexical retriever
 │   ├── llm.py                # LLM abstraction and local fallback
@@ -120,6 +121,22 @@ poetry run ai-showcase evaluate --queries examples/queries.jsonl --output evalua
 ```
 
 The default output path is `.artifacts/evaluation_report.json`. The run is fully deterministic with the local provider, so the report can be used as a CI regression gate. See [docs/evaluation.md](docs/evaluation.md) for the dataset format and why each metric matters in production RAG systems.
+
+## Experiments
+
+The experiment runner compares retrieval and answer-generation configurations in a repeatable way. An experiment is described by a YAML file covering chunking (`chunk_size`, `chunk_overlap`), embeddings (`embedding_provider`, `embedding_dim`), retrieval (`retriever_type`, `dense_weight`, `lexical_weight`, `top_k`), the LLM provider, and the dataset and query files:
+
+```bash
+poetry run ai-showcase experiment run --config examples/experiment_config.yaml
+```
+
+The run builds a fresh in-memory index from the configured dataset (the persisted application index is untouched) and writes three files to the configured `output_dir`:
+
+- `results.json`: the configuration plus per-query answers, citations, and metrics.
+- `metrics.json`: aggregate retrieval and answer-quality metrics.
+- `run_metadata.json`: timestamp, git commit, Python and package versions.
+
+With the local deterministic provider, `results.json` and `metrics.json` are bit-for-bit reproducible; environment-specific values live only in `run_metadata.json`. To compare configurations, copy `examples/experiment_config.yaml`, change one parameter (for example `retriever_type: dense` vs `hybrid`), point `output_dir` at a new folder, and diff the resulting `metrics.json` files.
 
 Run the API:
 

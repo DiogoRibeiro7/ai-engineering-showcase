@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 
 from ai_engineering_showcase.agent import FeedbackInsightAgent
 from ai_engineering_showcase.retrieval import Retriever
-from ai_engineering_showcase.schemas import EvaluationCase
+from ai_engineering_showcase.schemas import AgentAnswer, EvaluationCase
 
 REFUSAL_MARKERS = (
     "could not find enough evidence",
@@ -245,21 +245,25 @@ def load_evaluation_cases(path: str | Path) -> list[EvaluationCase]:
     return cases
 
 
-def evaluate_case(
+def evaluate_case_detailed(
     query_engine: Retriever,
     agent: FeedbackInsightAgent,
     case: EvaluationCase,
     *,
     top_k: int = 4,
-) -> CaseResult:
-    """Run one evaluation case through retrieval and the agent."""
+) -> tuple[CaseResult, AgentAnswer]:
+    """Run one evaluation case and return both the metrics and the raw answer.
+
+    Useful for callers (such as the experiment runner) that need the generated
+    answer text in addition to the per-case metrics.
+    """
     results = query_engine.search(case.question, top_k=top_k)
     retrieved_ids = [result.chunk.source_id for result in results]
     context_texts = [result.chunk.text for result in results]
     answer = agent.answer(case.question, top_k=top_k)
     refused = is_refusal(answer.answer)
     cited_ids = {citation.source_id for citation in answer.citations}
-    return CaseResult(
+    case_result = CaseResult(
         question=case.question,
         is_answerable=case.is_answerable,
         retrieved_document_ids=_dedupe(retrieved_ids),
@@ -273,6 +277,19 @@ def evaluate_case(
         refused=refused,
         refusal_correct=refused != case.is_answerable,
     )
+    return case_result, answer
+
+
+def evaluate_case(
+    query_engine: Retriever,
+    agent: FeedbackInsightAgent,
+    case: EvaluationCase,
+    *,
+    top_k: int = 4,
+) -> CaseResult:
+    """Run one evaluation case through retrieval and the agent."""
+    case_result, _ = evaluate_case_detailed(query_engine, agent, case, top_k=top_k)
+    return case_result
 
 
 def evaluate_system(
@@ -289,7 +306,15 @@ def evaluate_system(
     are averaged over all cases.
     """
     case_results = [evaluate_case(query_engine, agent, case, top_k=top_k) for case in cases]
+    return aggregate_report(case_results, top_k=top_k)
 
+
+def aggregate_report(case_results: list[CaseResult], *, top_k: int = 4) -> EvaluationReport:
+    """Aggregate per-case results into a typed :class:`EvaluationReport`.
+
+    Retrieval and citation metrics are averaged over answerable cases only;
+    answer metrics are averaged over all cases.
+    """
     answerable = [result for result in case_results if result.is_answerable]
     retrieval = RetrievalMetrics(
         precision_at_k=_mean([result.precision_at_k for result in answerable]),

@@ -11,6 +11,12 @@ import typer
 from ai_engineering_showcase.config import Settings
 from ai_engineering_showcase.data_contracts import DataContractError, validate_feedback_csv
 from ai_engineering_showcase.evaluation import evaluate_system, load_evaluation_cases
+from ai_engineering_showcase.experiments import (
+    ExperimentConfig,
+    collect_run_metadata,
+    run_experiment,
+    write_experiment_outputs,
+)
 from ai_engineering_showcase.factory import (
     build_agent,
     build_index,
@@ -20,6 +26,8 @@ from ai_engineering_showcase.factory import (
 from ai_engineering_showcase.telemetry import configure_logging
 
 app = typer.Typer(help="AI Engineering Showcase CLI")
+experiment_app = typer.Typer(help="Run repeatable experiments over RAG configurations.")
+app.add_typer(experiment_app, name="experiment")
 
 
 class RetrieverChoice(str, Enum):
@@ -134,6 +142,24 @@ def evaluate(
     output.write_text(report.model_dump_json(indent=2), encoding="utf-8")
     typer.echo(report.model_dump_json(indent=2))
     typer.echo(f"Evaluation report written to {output}", err=True)
+
+
+@experiment_app.command("run")
+def experiment_run(
+    config: Annotated[
+        Path,
+        typer.Option("--config", help="Path to a YAML experiment configuration."),
+    ],
+) -> None:
+    """Run a configured experiment and write results, metrics, and metadata."""
+    configure_logging()
+    experiment_config = ExperimentConfig.from_yaml(config)
+    result = run_experiment(experiment_config)
+    metadata = collect_run_metadata(experiment_config)
+    paths = write_experiment_outputs(result, metadata)
+    typer.echo(result.metrics.model_dump_json(indent=2))
+    for filename, path in paths.items():
+        typer.echo(f"{filename} written to {path}", err=True)
 
 
 @app.command()

@@ -44,11 +44,22 @@ def chunk_text(text: str, *, max_words: int = 80, overlap_words: int = 16) -> li
     return chunks
 
 
-def feedback_to_chunks(records: Iterable[FeedbackRecord]) -> list[DocumentChunk]:
-    """Convert validated feedback records into searchable document chunks."""
+def feedback_to_chunks(
+    records: Iterable[FeedbackRecord],
+    *,
+    max_words: int = 80,
+    overlap_words: int = 16,
+) -> list[DocumentChunk]:
+    """Convert validated feedback records into searchable document chunks.
+
+    Args:
+        records: Validated feedback records to chunk.
+        max_words: Maximum words per chunk (see :func:`chunk_text`).
+        overlap_words: Words shared between adjacent chunks.
+    """
     chunks: list[DocumentChunk] = []
     for record in records:
-        chunk_texts = chunk_text(record.text)
+        chunk_texts = chunk_text(record.text, max_words=max_words, overlap_words=overlap_words)
         for index, text in enumerate(chunk_texts):
             chunks.append(
                 DocumentChunk(

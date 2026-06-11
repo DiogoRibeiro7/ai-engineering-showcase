@@ -29,6 +29,7 @@ This roadmap is designed to evolve the repository from a compact portfolio proje
 
 ## Phase 4 — Evaluation and observability
 
+- [x] Add a local experiment runner for comparing retrieval and generation configurations.
 - [ ] Add MLflow or Weights & Biases experiment tracking.
 - [ ] Add OpenTelemetry traces for retrieval and generation.
 - [ ] Add prompt-injection test cases.
