@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from pathlib import Path
 from typing import Annotated
 
@@ -9,13 +10,24 @@ import typer
 
 from ai_engineering_showcase.config import Settings
 from ai_engineering_showcase.data_contracts import DataContractError, validate_feedback_csv
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
 from ai_engineering_showcase.evaluation import evaluate_system, load_evaluation_cases
-from ai_engineering_showcase.factory import build_agent, build_index, load_or_build_index
-from ai_engineering_showcase.retrieval import QueryEngine
+from ai_engineering_showcase.factory import (
+    build_agent,
+    build_index,
+    build_retriever,
+    load_or_build_index,
+)
 from ai_engineering_showcase.telemetry import configure_logging
 
 app = typer.Typer(help="AI Engineering Showcase CLI")
+
+
+class RetrieverChoice(str, Enum):
+    """Retriever strategies selectable from the command line."""
+
+    dense = "dense"
+    lexical = "lexical"
+    hybrid = "hybrid"
 
 
 @app.command()
@@ -60,10 +72,24 @@ def query(
         ".artifacts/vector_store.json"
     ),
     top_k: Annotated[int, typer.Option(help="Number of chunks to retrieve.")] = 4,
+    retriever: Annotated[
+        RetrieverChoice, typer.Option(help="Retrieval strategy: dense, lexical, or hybrid.")
+    ] = RetrieverChoice.dense,
+    dense_weight: Annotated[
+        float, typer.Option(help="Dense score weight for hybrid retrieval.")
+    ] = 0.6,
+    lexical_weight: Annotated[
+        float, typer.Option(help="Lexical score weight for hybrid retrieval.")
+    ] = 0.4,
 ) -> None:
     """Ask a question against the indexed feedback."""
     configure_logging()
-    settings = Settings(index_path=index_path)
+    settings = Settings(
+        index_path=index_path,
+        retriever_type=retriever.value,
+        dense_weight=dense_weight,
+        lexical_weight=lexical_weight,
+    )
     agent = build_agent(settings)
     answer = agent.answer(question, top_k=top_k)
     typer.echo(answer.model_dump_json(indent=2))
@@ -81,13 +107,26 @@ def evaluate(
         ".artifacts/vector_store.json"
     ),
     top_k: Annotated[int, typer.Option(help="Number of chunks to retrieve.")] = 4,
+    retriever: Annotated[
+        RetrieverChoice, typer.Option(help="Retrieval strategy: dense, lexical, or hybrid.")
+    ] = RetrieverChoice.dense,
+    dense_weight: Annotated[
+        float, typer.Option(help="Dense score weight for hybrid retrieval.")
+    ] = 0.6,
+    lexical_weight: Annotated[
+        float, typer.Option(help="Lexical score weight for hybrid retrieval.")
+    ] = 0.4,
 ) -> None:
     """Run offline retrieval and answer-quality evaluation and write a JSON report."""
     configure_logging()
-    settings = Settings(index_path=index_path)
+    settings = Settings(
+        index_path=index_path,
+        retriever_type=retriever.value,
+        dense_weight=dense_weight,
+        lexical_weight=lexical_weight,
+    )
     vector_store = load_or_build_index(settings)
-    embedding_model = HashingEmbeddingModel(dim=vector_store.dim)
-    query_engine = QueryEngine(embedding_model=embedding_model, vector_store=vector_store)
+    query_engine = build_retriever(settings, vector_store)
     agent = build_agent(settings)
     cases = load_evaluation_cases(queries)
     report = evaluate_system(query_engine, agent, cases, top_k=top_k)

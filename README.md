@@ -34,9 +34,10 @@ ai-engineering-showcase/
 │   ├── embeddings.py         # Hashing embedding model
 │   ├── evaluation.py         # Retrieval and answer-quality metrics
 │   ├── ingestion.py          # CSV feedback loader
+│   ├── lexical_search.py     # BM25 lexical retriever
 │   ├── llm.py                # LLM abstraction and local fallback
 │   ├── prompts.py            # Prompt construction
-│   ├── retrieval.py          # Query engine
+│   ├── retrieval.py          # Query engine and hybrid retriever
 │   ├── schemas.py            # Domain schemas
 │   ├── telemetry.py          # Structured logging helpers
 │   └── vector_store.py       # In-memory vector store with JSON persistence
@@ -60,6 +61,36 @@ poetry install
 poetry run ai-showcase index --input data/sample_feedback.csv --index-path .artifacts/vector_store.json
 poetry run ai-showcase query "Why are enterprise customers unhappy with onboarding?" --index-path .artifacts/vector_store.json
 ```
+
+## Retrieval strategies
+
+Three retrievers are available behind a common interface:
+
+- `dense` (default): cosine similarity over hashing embeddings. Good for paraphrased questions.
+- `lexical`: a local BM25 index built from the same chunks. Good for exact domain terms such as product names, integration names, or error codes.
+- `hybrid`: queries both, min-max normalizes each score list, de-duplicates documents, and combines them as `dense_weight * dense + lexical_weight * lexical` (weights are normalized to sum to 1).
+
+Select the retriever when querying:
+
+```bash
+# Default dense retrieval (unchanged behaviour).
+poetry run ai-showcase query "Why are enterprise customers unhappy with onboarding?"
+
+# Exact-term lookup with BM25.
+poetry run ai-showcase query "Which Salesforce integration problems were reported?" --retriever lexical
+
+# Hybrid retrieval with custom weights.
+poetry run ai-showcase query "Which Salesforce integration problems were reported?" \
+  --retriever hybrid --dense-weight 0.5 --lexical-weight 0.5
+```
+
+The same options work for `ai-showcase evaluate`, so retrieval strategies can be compared offline:
+
+```bash
+poetry run ai-showcase evaluate --queries examples/queries.jsonl --retriever hybrid
+```
+
+The API uses the retriever configured through the environment (`AI_SHOWCASE_RETRIEVER_TYPE`, `AI_SHOWCASE_DENSE_WEIGHT`, `AI_SHOWCASE_LEXICAL_WEIGHT`).
 
 ## Data validation
 
@@ -144,6 +175,9 @@ Environment variables:
 | `AI_SHOWCASE_DATA_PATH` | `data/sample_feedback.csv` | CSV file loaded by the API at startup. |
 | `AI_SHOWCASE_INDEX_PATH` | `.artifacts/vector_store.json` | Local vector index path. |
 | `AI_SHOWCASE_EMBEDDING_DIM` | `512` | Dimension used by the hashing embedding model. |
+| `AI_SHOWCASE_RETRIEVER_TYPE` | `dense` | Retrieval strategy: `dense`, `lexical`, or `hybrid`. |
+| `AI_SHOWCASE_DENSE_WEIGHT` | `0.6` | Dense score weight used by the hybrid retriever. |
+| `AI_SHOWCASE_LEXICAL_WEIGHT` | `0.4` | Lexical (BM25) score weight used by the hybrid retriever. |
 | `AI_SHOWCASE_LLM_PROVIDER` | `local` | `local` or `openai`. |
 | `OPENAI_API_KEY` | empty | Required only when using the optional OpenAI provider. |
 | `OPENAI_MODEL` | `gpt-4o-mini` | Model name for the optional OpenAI provider. |

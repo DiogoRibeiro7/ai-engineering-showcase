@@ -8,6 +8,8 @@ from typing import Literal
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+RetrieverType = Literal["dense", "lexical", "hybrid"]
+
 
 class Settings(BaseSettings):
     """Runtime settings loaded from environment variables."""
@@ -21,6 +23,9 @@ class Settings(BaseSettings):
     data_path: Path = Field(default=Path("data/sample_feedback.csv"))
     index_path: Path = Field(default=Path(".artifacts/vector_store.json"))
     embedding_dim: int = Field(default=512, ge=64, le=8192)
+    retriever_type: RetrieverType = "dense"
+    dense_weight: float = Field(default=0.6, ge=0.0)
+    lexical_weight: float = Field(default=0.4, ge=0.0)
     llm_provider: Literal["local", "openai"] = "local"
     openai_api_key: str | None = Field(default=None, validation_alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4o-mini", validation_alias="OPENAI_MODEL")

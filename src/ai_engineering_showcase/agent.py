@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from ai_engineering_showcase.llm import LLMProvider
 from ai_engineering_showcase.prompts import build_grounded_prompt
-from ai_engineering_showcase.retrieval import QueryEngine
+from ai_engineering_showcase.retrieval import Retriever
 from ai_engineering_showcase.schemas import AgentAnswer, Citation, SearchResult
 from ai_engineering_showcase.telemetry import log_event
 
@@ -31,7 +31,8 @@ ROUTE_RULES = (
 class FeedbackInsightAgent:
     """Evidence-grounded feedback intelligence agent."""
 
-    def __init__(self, query_engine: QueryEngine, llm: LLMProvider) -> None:
+    def __init__(self, query_engine: Retriever, llm: LLMProvider) -> None:
+        """Wire the retriever (dense, lexical, or hybrid) to the LLM provider."""
         self.query_engine = query_engine
         self.llm = llm
 

@@ -18,7 +18,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from ai_engineering_showcase.agent import FeedbackInsightAgent
-from ai_engineering_showcase.retrieval import QueryEngine
+from ai_engineering_showcase.retrieval import Retriever
 from ai_engineering_showcase.schemas import EvaluationCase
 
 REFUSAL_MARKERS = (
@@ -246,7 +246,7 @@ def load_evaluation_cases(path: str | Path) -> list[EvaluationCase]:
 
 
 def evaluate_case(
-    query_engine: QueryEngine,
+    query_engine: Retriever,
     agent: FeedbackInsightAgent,
     case: EvaluationCase,
     *,
@@ -276,7 +276,7 @@ def evaluate_case(
 
 
 def evaluate_system(
-    query_engine: QueryEngine,
+    query_engine: Retriever,
     agent: FeedbackInsightAgent,
     cases: list[EvaluationCase],
     *,

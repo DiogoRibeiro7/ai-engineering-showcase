@@ -9,8 +9,9 @@ from ai_engineering_showcase.chunking import feedback_to_chunks
 from ai_engineering_showcase.config import Settings
 from ai_engineering_showcase.embeddings import HashingEmbeddingModel
 from ai_engineering_showcase.ingestion import load_feedback_csv
+from ai_engineering_showcase.lexical_search import BM25Retriever
 from ai_engineering_showcase.llm import DeterministicLLM, LLMProvider, OpenAIChatLLM
-from ai_engineering_showcase.retrieval import QueryEngine
+from ai_engineering_showcase.retrieval import HybridRetriever, QueryEngine, Retriever
 from ai_engineering_showcase.schemas import DocumentChunk
 from ai_engineering_showcase.vector_store import InMemoryVectorStore
 
@@ -59,6 +60,29 @@ def load_or_build_index(settings: Settings) -> InMemoryVectorStore:
     )
 
 
+def build_retriever(settings: Settings, vector_store: InMemoryVectorStore) -> Retriever:
+    """Construct the configured retriever over an existing vector store.
+
+    ``dense`` keeps the original vector-similarity behaviour, ``lexical`` uses
+    the local BM25 index, and ``hybrid`` combines both with the configured
+    ``dense_weight`` and ``lexical_weight``.
+    """
+    embedding_model = HashingEmbeddingModel(dim=vector_store.dim)
+    dense = QueryEngine(embedding_model=embedding_model, vector_store=vector_store)
+    if settings.retriever_type == "dense":
+        return dense
+    chunks = vector_store.chunks
+    lexical = BM25Retriever(chunks, texts=[chunk_to_embedding_text(chunk) for chunk in chunks])
+    if settings.retriever_type == "lexical":
+        return lexical
+    return HybridRetriever(
+        dense=dense,
+        lexical=lexical,
+        dense_weight=settings.dense_weight,
+        lexical_weight=settings.lexical_weight,
+    )
+
+
 def build_llm(settings: Settings) -> LLMProvider:
     """Construct the configured LLM provider."""
     if settings.llm_provider == "openai":
@@ -71,6 +95,5 @@ def build_llm(settings: Settings) -> LLMProvider:
 def build_agent(settings: Settings) -> FeedbackInsightAgent:
     """Construct a fully wired feedback insight agent."""
     vector_store = load_or_build_index(settings)
-    embedding_model = HashingEmbeddingModel(dim=vector_store.dim)
-    query_engine = QueryEngine(embedding_model=embedding_model, vector_store=vector_store)
-    return FeedbackInsightAgent(query_engine=query_engine, llm=build_llm(settings))
+    retriever = build_retriever(settings, vector_store)
+    return FeedbackInsightAgent(query_engine=retriever, llm=build_llm(settings))
