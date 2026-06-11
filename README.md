@@ -80,6 +80,16 @@ Run the demo:
 poetry run python scripts/run_demo.py
 ```
 
+## Evaluation
+
+The project ships an offline evaluation harness that measures retrieval quality (precision@k, recall@k, MRR, context hit rate) and answer quality (keyword coverage, groundedness, citation alignment, refusal correctness) over a JSONL dataset:
+
+```bash
+poetry run ai-showcase evaluate --queries examples/queries.jsonl --output evaluation_report.json
+```
+
+The default output path is `.artifacts/evaluation_report.json`. The run is fully deterministic with the local provider, so the report can be used as a CI regression gate. See [docs/evaluation.md](docs/evaluation.md) for the dataset format and why each metric matters in production RAG systems.
+
 Run the API:
 
 ```bash

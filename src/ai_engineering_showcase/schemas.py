@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 
 class FeedbackChannel(str, Enum):
@@ -95,7 +95,18 @@ class IndexRequest(BaseModel):
 
 
 class EvaluationCase(BaseModel):
-    """Single retrieval evaluation case."""
+    """Single evaluation case covering retrieval and answer quality.
 
-    question: str
-    relevant_source_ids: list[str]
+    The ``relevant_source_ids`` field name is accepted as a legacy alias for
+    ``relevant_document_ids`` so older evaluation files keep loading.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    question: str = Field(min_length=1)
+    expected_keywords: list[str] = Field(default_factory=list)
+    relevant_document_ids: list[str] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("relevant_document_ids", "relevant_source_ids"),
+    )
+    is_answerable: bool = True

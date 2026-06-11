@@ -35,6 +35,7 @@ htmlcov/
 
 # Project artifacts
 .artifacts/
+evaluation_report*.json
 *.log
 logs/
 

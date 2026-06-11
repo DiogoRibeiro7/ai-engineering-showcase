@@ -71,24 +71,30 @@ def query(
 
 @app.command()
 def evaluate(
-    eval_path: Annotated[Path, typer.Option(help="Path to JSONL evaluation cases.")] = Path(
+    queries: Annotated[Path, typer.Option(help="Path to JSONL evaluation cases.")] = Path(
         "examples/queries.jsonl"
+    ),
+    output: Annotated[Path, typer.Option(help="Path for the JSON evaluation report.")] = Path(
+        ".artifacts/evaluation_report.json"
     ),
     index_path: Annotated[Path, typer.Option(help="Path to vector index.")] = Path(
         ".artifacts/vector_store.json"
     ),
     top_k: Annotated[int, typer.Option(help="Number of chunks to retrieve.")] = 4,
 ) -> None:
-    """Run offline retrieval and answer quality evaluation."""
+    """Run offline retrieval and answer-quality evaluation and write a JSON report."""
     configure_logging()
     settings = Settings(index_path=index_path)
     vector_store = load_or_build_index(settings)
     embedding_model = HashingEmbeddingModel(dim=vector_store.dim)
     query_engine = QueryEngine(embedding_model=embedding_model, vector_store=vector_store)
     agent = build_agent(settings)
-    cases = load_evaluation_cases(eval_path)
+    cases = load_evaluation_cases(queries)
     report = evaluate_system(query_engine, agent, cases, top_k=top_k)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(report.model_dump_json(indent=2), encoding="utf-8")
     typer.echo(report.model_dump_json(indent=2))
+    typer.echo(f"Evaluation report written to {output}", err=True)
 
 
 @app.command()

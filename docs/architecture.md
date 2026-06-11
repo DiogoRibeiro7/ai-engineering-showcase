@@ -67,7 +67,7 @@ Cited answer + recommended actions + diagnostics
 
 ### Evaluation
 
-`evaluation.py` includes retrieval metrics and answer-quality checks. This is important because AI engineering should not stop at prompt writing. Retrieval quality, citation coverage, and grounding need continuous measurement.
+`evaluation.py` measures retrieval quality (precision@k, recall@k, MRR, context hit rate) and answer quality (keyword coverage, groundedness, citation alignment, refusal correctness) and aggregates them into a typed `EvaluationReport`. This is important because AI engineering should not stop at prompt writing: retrieval quality, grounding, and abstention behaviour need continuous measurement. See [evaluation.md](evaluation.md) for details.
 
 ### API
 

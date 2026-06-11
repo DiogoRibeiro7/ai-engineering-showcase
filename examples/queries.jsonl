@@ -1,4 +1,5 @@
-{"question":"Why are enterprise customers unhappy with onboarding?","relevant_source_ids":["fb-001","fb-007","fb-009"]}
-{"question":"What product issues affect reporting workflows?","relevant_source_ids":["fb-002","fb-011","fb-005"]}
-{"question":"Which integrations should the product team prioritise?","relevant_source_ids":["fb-005","fb-010"]}
-{"question":"What should we improve in support operations?","relevant_source_ids":["fb-006","fb-012","fb-005"]}
+{"question": "Why are enterprise customers unhappy with onboarding?", "expected_keywords": ["onboarding", "checklist"], "relevant_document_ids": ["fb-001", "fb-007", "fb-009"], "is_answerable": true}
+{"question": "What product issues affect reporting workflows?", "expected_keywords": ["reporting", "export"], "relevant_document_ids": ["fb-002", "fb-011", "fb-005"], "is_answerable": true}
+{"question": "Which integrations should the product team prioritise?", "expected_keywords": ["integration"], "relevant_document_ids": ["fb-005", "fb-010"], "is_answerable": true}
+{"question": "What should we improve in support operations?", "expected_keywords": ["support"], "relevant_document_ids": ["fb-006", "fb-012", "fb-005"], "is_answerable": true}
+{"question": "What do customers say about our mobile offline mode on submarines?", "expected_keywords": [], "relevant_document_ids": [], "is_answerable": false}
