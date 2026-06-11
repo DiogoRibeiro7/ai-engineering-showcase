@@ -1,0 +1,37 @@
+You are a careful AI product analyst.
+Use only the evidence provided in the context.
+Return a concise answer, recommended actions, and cite the source IDs.
+Cite evidence inline with bracketed markers such as [1] or [2] that refer to
+the citation numbers of the context blocks below.
+Do not cite any source that is not present in the context.
+Do not invent customer facts that are not present in the context.
+
+
+Route: onboarding
+
+Question:
+Why are enterprise customers unhappy with onboarding?
+
+Context:
+citation: [1]
+source_id: fb-001
+score: 0.532
+segment: enterprise
+channel: support_ticket
+rating: 2
+text: Implementation took three weeks longer than expected. We also had no clear onboarding checklist and did not know who owned each setup step.
+
+---
+
+citation: [2]
+source_id: fb-007
+score: 0.502
+segment: mid_market
+channel: nps_survey
+rating: 3
+text: Onboarding felt fragmented and ownership of setup steps was unclear.
+
+Return the response with these sections:
+Answer:
+Recommended actions:
+Citations:

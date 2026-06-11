@@ -37,7 +37,8 @@ ai-engineering-showcase/
 │   ├── ingestion.py          # CSV feedback loader
 │   ├── lexical_search.py     # BM25 lexical retriever
 │   ├── llm.py                # LLM abstraction and local fallback
-│   ├── prompts.py            # Prompt construction
+│   ├── prompt_registry.py    # Versioned prompt registry
+│   ├── prompts.py            # Prompt definitions and construction
 │   ├── retrieval.py          # Query engine and hybrid retriever
 │   ├── schemas.py            # Domain schemas
 │   ├── telemetry.py          # Structured logging helpers
@@ -222,6 +223,25 @@ markers deterministically, so citation output is reproducible in tests and CI.
 
 The same metadata is returned by the API (`result.citations` in the `/query` response) and
 rendered as a readable block by the CLI `query` command.
+
+## Prompt versioning
+
+Prompts are treated as production assets. Every prompt is registered in a versioned
+registry (`prompt_registry.py` + `prompts.py`) with a name, version, declared variables,
+and a changelog note. Rendering validates variables, so missing or unknown template
+variables raise clear errors, and golden snapshot tests pin the exact prompt bytes so
+accidental prompt changes fail CI.
+
+Inspect and render prompts from the CLI:
+
+```bash
+poetry run ai-showcase prompts list
+poetry run ai-showcase prompts render --name rag_answer --version latest \
+  --var question="Why are enterprise customers unhappy with onboarding?"
+```
+
+See [docs/prompts.md](docs/prompts.md) for the registry fields, validation rules, and
+how to introduce a new prompt version safely.
 
 ## Example output
 

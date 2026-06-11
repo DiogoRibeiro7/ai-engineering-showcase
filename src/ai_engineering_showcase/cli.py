@@ -24,11 +24,19 @@ from ai_engineering_showcase.factory import (
     build_retriever,
     load_or_build_index,
 )
+from ai_engineering_showcase.prompt_registry import (
+    LATEST_VERSION,
+    PromptNotFoundError,
+    PromptVariableError,
+)
+from ai_engineering_showcase.prompts import PROMPT_REGISTRY
 from ai_engineering_showcase.telemetry import configure_logging
 
 app = typer.Typer(help="AI Engineering Showcase CLI")
 experiment_app = typer.Typer(help="Run repeatable experiments over RAG configurations.")
 app.add_typer(experiment_app, name="experiment")
+prompts_app = typer.Typer(help="Inspect and render versioned prompt templates.")
+app.add_typer(prompts_app, name="prompts")
 
 
 class RetrieverChoice(str, Enum):
@@ -162,6 +170,48 @@ def experiment_run(
     typer.echo(result.metrics.model_dump_json(indent=2))
     for filename, path in paths.items():
         typer.echo(f"{filename} written to {path}", err=True)
+
+
+@prompts_app.command("list")
+def prompts_list() -> None:
+    """List registered prompts with versions, variables, and changelog notes."""
+    for name in PROMPT_REGISTRY.names():
+        latest_version = PROMPT_REGISTRY.get(name).version
+        for template in PROMPT_REGISTRY.list_templates(name):
+            marker = " (latest)" if template.version == latest_version else ""
+            required = ", ".join(template.required_variables) or "-"
+            optional = ", ".join(template.optional_variables) or "-"
+            typer.echo(f"{template.name} {template.version}{marker}")
+            typer.echo(f"  required variables: {required}")
+            typer.echo(f"  optional variables: {optional}")
+            typer.echo(f"  changelog: {template.changelog}")
+
+
+@prompts_app.command("render")
+def prompts_render(
+    name: Annotated[str, typer.Option("--name", help="Prompt name, e.g. rag_answer.")],
+    version: Annotated[
+        str, typer.Option("--version", help="Prompt version, e.g. v1 or latest.")
+    ] = LATEST_VERSION,
+    var: Annotated[
+        list[str] | None,
+        typer.Option("--var", help="Template variable as key=value. Repeat for multiple."),
+    ] = None,
+) -> None:
+    """Render a registered prompt template with the given variables."""
+    variables: dict[str, str] = {}
+    for item in var or []:
+        key, separator, value = item.partition("=")
+        if not separator or not key:
+            typer.echo(f"Invalid --var {item!r}: expected key=value", err=True)
+            raise typer.Exit(code=2)
+        variables[key] = value
+    try:
+        rendered = PROMPT_REGISTRY.render(name, version, **variables)
+    except (PromptNotFoundError, PromptVariableError) as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(rendered)
 
 
 @app.command()

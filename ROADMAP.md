@@ -24,7 +24,7 @@ This roadmap is designed to evolve the repository from a compact portfolio proje
 - [ ] Add OpenAI Responses API provider.
 - [ ] Add AWS Bedrock provider.
 - [ ] Add retry, timeout, and circuit-breaker policies.
-- [ ] Add prompt versioning.
+- [x] Add prompt versioning with a validated registry, CLI inspection, and snapshot tests.
 - [ ] Add structured JSON output validation with automatic repair.
 
 ## Phase 4 — Evaluation and observability

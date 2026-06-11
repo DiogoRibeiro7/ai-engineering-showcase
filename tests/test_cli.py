@@ -57,6 +57,74 @@ def test_evaluate_command_creates_output_directory(tmp_path: Path) -> None:
     assert output.exists()
 
 
+def test_prompts_list_shows_registered_prompts() -> None:
+    result = runner.invoke(app, ["prompts", "list"])
+    assert result.exit_code == 0, result.output
+    assert "rag_answer v1 (latest)" in result.output
+    assert "rag_system v1 (latest)" in result.output
+    assert "required variables: question" in result.output
+    assert "changelog:" in result.output
+
+
+def test_prompts_render_with_question_only_uses_defaults() -> None:
+    result = runner.invoke(
+        app,
+        [
+            "prompts",
+            "render",
+            "--name",
+            "rag_answer",
+            "--version",
+            "latest",
+            "--var",
+            "question=Why is onboarding slow?",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "Why is onboarding slow?" in result.output
+    assert "Route: general_insight" in result.output
+
+
+def test_prompts_render_supports_repeated_vars() -> None:
+    result = runner.invoke(
+        app,
+        [
+            "prompts",
+            "render",
+            "--name",
+            "rag_answer",
+            "--var",
+            "question=Why is onboarding slow?",
+            "--var",
+            "route=onboarding",
+            "--var",
+            "context=text: setup took weeks",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    assert "Route: onboarding" in result.output
+    assert "text: setup took weeks" in result.output
+
+
+def test_prompts_render_missing_required_variable_fails_clearly() -> None:
+    result = runner.invoke(app, ["prompts", "render", "--name", "rag_answer"])
+    assert result.exit_code == 1
+    assert "missing required variable" in result.output
+    assert "question" in result.output
+
+
+def test_prompts_render_unknown_prompt_fails_clearly() -> None:
+    result = runner.invoke(app, ["prompts", "render", "--name", "nope"])
+    assert result.exit_code == 1
+    assert "unknown prompt 'nope'" in result.output
+
+
+def test_prompts_render_rejects_malformed_var() -> None:
+    result = runner.invoke(app, ["prompts", "render", "--name", "rag_answer", "--var", "question"])
+    assert result.exit_code == 2
+    assert "expected key=value" in result.output
+
+
 def test_evaluate_command_fails_on_invalid_queries_file(tmp_path: Path) -> None:
     queries = tmp_path / "bad.jsonl"
     queries.write_text("not json\n", encoding="utf-8")

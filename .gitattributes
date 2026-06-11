@@ -1,0 +1,2 @@
+# Prompt snapshots are byte-exact golden files; never apply EOL conversion.
+tests/snapshots/*.txt -text
