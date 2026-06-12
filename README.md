@@ -201,6 +201,7 @@ Environment variables:
 | `AI_SHOWCASE_LLM_PROVIDER` | `local` | `local` or `openai`. |
 | `AI_SHOWCASE_TELEMETRY_ENABLED` | `false` | Enable structured telemetry events. |
 | `AI_SHOWCASE_TELEMETRY_PATH` | `.artifacts/telemetry.jsonl` | JSONL file that telemetry events are appended to. |
+| `AI_SHOWCASE_CONVERSATION_STORE_PATH` | `.artifacts/conversations` | Directory holding one JSON file per chat conversation. |
 | `OPENAI_API_KEY` | empty | Required only when using the optional OpenAI provider. |
 | `OPENAI_MODEL` | `gpt-4o-mini` | Model name for the optional OpenAI provider. |
 
@@ -258,6 +259,43 @@ markers deterministically, so citation output is reproducible in tests and CI.
 
 The same metadata is returned by the API (`result.citations` in the `/query` response) and
 rendered as a readable block by the CLI `query` command.
+
+## Conversation memory
+
+Single-turn `query` behaviour is unchanged, but the agent can also hold multi-turn
+conversations with persistent memory (`memory.py`). Each turn records the user
+message, the assistant answer, the cited document IDs, a UTC timestamp, and optional
+metadata, keyed by a `conversation_id`. Conversations are persisted as one JSON file
+each (default `.artifacts/conversations/{conversation_id}.json`); an in-memory store
+is available for tests.
+
+Follow-up questions are first rewritten into standalone questions by a deterministic,
+fully local rewriter (no model call): standalone pronouns are resolved against entities
+from the previous turn, and elliptical follow-ups such as "What about pricing?" are
+expanded with the previous turn's missing topics. Only the rewritten standalone
+question reaches retrieval — the index is never queried with the full conversation
+history — and the rewrite is reported transparently in `diagnostics`
+(`query_rewritten`, `rewrite_strategy`, `retrieval_question`). An optional
+`LLMQueryRewriter` can delegate rewriting to an LLM provider instead.
+
+Chat from the CLI (interactive REPL, or single-message mode for scripting):
+
+```bash
+poetry run ai-showcase chat                                  # interactive REPL
+poetry run ai-showcase chat --message "Why are enterprise customers unhappy with onboarding?" --conversation-id demo
+poetry run ai-showcase chat --message "What about pricing?" --conversation-id demo
+```
+
+Or over the API:
+
+```bash
+curl -X POST http://127.0.0.1:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Why are enterprise customers unhappy with onboarding?"}'
+# -> {"conversation_id": "…", "result": {…}} ; pass conversation_id back to continue.
+
+curl http://127.0.0.1:8000/conversations/<conversation_id>   # stored turns
+```
 
 ## Guardrails and safe refusals
 

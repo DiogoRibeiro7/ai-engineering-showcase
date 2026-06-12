@@ -11,6 +11,7 @@ from ai_engineering_showcase.embeddings import HashingEmbeddingModel
 from ai_engineering_showcase.ingestion import load_feedback_csv
 from ai_engineering_showcase.lexical_search import BM25Retriever
 from ai_engineering_showcase.llm import DeterministicLLM, LLMProvider, OpenAIChatLLM
+from ai_engineering_showcase.memory import JsonConversationStore
 from ai_engineering_showcase.retrieval import HybridRetriever, QueryEngine, Retriever
 from ai_engineering_showcase.schemas import DocumentChunk
 from ai_engineering_showcase.telemetry import JsonlTelemetrySink, Telemetry
@@ -28,6 +29,15 @@ def build_telemetry(settings: Settings) -> Telemetry:
     if not settings.telemetry_enabled:
         return Telemetry()
     return Telemetry(sink=JsonlTelemetrySink(settings.telemetry_path))
+
+
+def build_conversation_store(settings: Settings) -> JsonConversationStore:
+    """Construct the JSON-backed conversation store configured by the settings.
+
+    Conversations are persisted as one JSON file each under
+    ``AI_SHOWCASE_CONVERSATION_STORE_PATH`` (default ``.artifacts/conversations``).
+    """
+    return JsonConversationStore(settings.conversation_store_path)
 
 
 def chunk_to_embedding_text(chunk: DocumentChunk) -> str:

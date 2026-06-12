@@ -8,6 +8,54 @@ from typer.testing import CliRunner
 from ai_engineering_showcase.cli import app
 
 runner = CliRunner()
+stdout_runner = CliRunner(mix_stderr=False)
+
+
+def test_chat_command_single_message_then_followup(tmp_path: Path) -> None:
+    index_path = tmp_path / "vector_store.json"
+    store_path = tmp_path / "conversations"
+    common = ["--index-path", str(index_path), "--store-path", str(store_path)]
+
+    first = stdout_runner.invoke(
+        app,
+        ["chat", "--message", "Why are enterprise customers unhappy with onboarding?", *common],
+    )
+    assert first.exit_code == 0, first.output
+    first_payload = json.loads(first.stdout)
+    conversation_id = first_payload["conversation_id"]
+    assert conversation_id
+    assert first_payload["result"]["citations"]
+
+    second = stdout_runner.invoke(
+        app,
+        ["chat", "--message", "What about pricing?", "--conversation-id", conversation_id, *common],
+    )
+    assert second.exit_code == 0, second.output
+    second_payload = json.loads(second.stdout)
+    assert second_payload["conversation_id"] == conversation_id
+    diagnostics = second_payload["result"]["diagnostics"]
+    assert diagnostics["query_rewritten"] is True
+    assert "onboarding" in diagnostics["retrieval_question"].lower()
+
+    stored = json.loads((store_path / f"{conversation_id}.json").read_text(encoding="utf-8"))
+    assert [turn["user_message"] for turn in stored["turns"]] == [
+        "Why are enterprise customers unhappy with onboarding?",
+        "What about pricing?",
+    ]
+
+
+def test_chat_command_interactive_repl(tmp_path: Path) -> None:
+    index_path = tmp_path / "vector_store.json"
+    store_path = tmp_path / "conversations"
+    result = runner.invoke(
+        app,
+        ["chat", "--index-path", str(index_path), "--store-path", str(store_path)],
+        input="Why is onboarding slow?\nexit\n",
+    )
+    assert result.exit_code == 0, result.output
+    assert "The strongest signal" in result.output
+    conversations = list(store_path.glob("*.json"))
+    assert len(conversations) == 1
 
 
 def test_evaluate_command_writes_structured_report(tmp_path: Path) -> None:

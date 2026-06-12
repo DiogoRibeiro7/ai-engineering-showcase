@@ -3,6 +3,7 @@ from __future__ import annotations
 from ai_engineering_showcase.agent import FeedbackInsightAgent
 from ai_engineering_showcase.embeddings import HashingEmbeddingModel
 from ai_engineering_showcase.llm import DeterministicLLM
+from ai_engineering_showcase.memory import ConversationTurn, InMemoryConversationStore
 from ai_engineering_showcase.retrieval import QueryEngine
 from ai_engineering_showcase.schemas import DocumentChunk
 from ai_engineering_showcase.vector_store import InMemoryVectorStore
@@ -41,3 +42,69 @@ def test_agent_answer_contains_citations() -> None:
     assert answer.citations
     assert answer.confidence > 0
     assert answer.recommended_actions
+
+
+def test_agent_single_turn_answer_has_no_memory_diagnostics() -> None:
+    agent = build_test_agent()
+    answer = agent.answer("Why is onboarding slow?", top_k=1)
+    assert "query_rewritten" not in answer.diagnostics
+    assert "retrieval_question" not in answer.diagnostics
+    assert "rewrite_strategy" not in answer.diagnostics
+
+
+def test_agent_answer_with_history_rewrites_followup_for_retrieval() -> None:
+    agent = build_test_agent()
+    history = [
+        ConversationTurn(
+            user_message="Why is onboarding slow for enterprise customers?",
+            assistant_answer="Onboarding friction dominates.",
+            retrieved_document_ids=["fb-1"],
+        )
+    ]
+    answer = agent.answer("What about pricing?", top_k=2, history=history)
+    assert answer.question == "What about pricing?"
+    assert answer.diagnostics["query_rewritten"] is True
+    retrieval_question = str(answer.diagnostics["retrieval_question"])
+    assert "pricing" in retrieval_question.lower()
+    assert "onboarding" in retrieval_question.lower()
+
+
+def test_agent_answer_with_empty_history_matches_single_turn() -> None:
+    agent = build_test_agent()
+    single = agent.answer("Why is onboarding slow?", top_k=1)
+    with_history = agent.answer("Why is onboarding slow?", top_k=1, history=[])
+    assert with_history.model_dump() == single.model_dump()
+
+
+def test_agent_chat_persists_turns_and_uses_previous_context() -> None:
+    agent = build_test_agent()
+    store = InMemoryConversationStore()
+    first_answer, conversation_id = agent.chat("Why is onboarding slow?", store=store, top_k=1)
+    assert first_answer.citations
+    second_answer, same_id = agent.chat(
+        "What about pricing?", store=store, conversation_id=conversation_id, top_k=1
+    )
+    assert same_id == conversation_id
+    assert second_answer.diagnostics["query_rewritten"] is True
+
+    memory = store.get(conversation_id)
+    assert memory is not None
+    assert [turn.user_message for turn in memory.turns] == [
+        "Why is onboarding slow?",
+        "What about pricing?",
+    ]
+    assert memory.turns[0].retrieved_document_ids == ["fb-1"]
+    assert memory.turns[1].metadata["retrieval_question"]
+
+
+def test_agent_chat_isolates_conversations() -> None:
+    agent = build_test_agent()
+    store = InMemoryConversationStore()
+    _, first_id = agent.chat("Why is onboarding slow?", store=store, top_k=1)
+    _, second_id = agent.chat("Why is pricing renewal hard?", store=store, top_k=1)
+    assert first_id != second_id
+    first = store.get(first_id)
+    second = store.get(second_id)
+    assert first is not None and len(first.turns) == 1
+    assert second is not None and len(second.turns) == 1
+    assert first.turns[0].user_message != second.turns[0].user_message

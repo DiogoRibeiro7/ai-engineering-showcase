@@ -20,6 +20,7 @@ from ai_engineering_showcase.experiments import (
 )
 from ai_engineering_showcase.factory import (
     build_agent,
+    build_conversation_store,
     build_index,
     build_retriever,
     build_telemetry,
@@ -31,6 +32,7 @@ from ai_engineering_showcase.prompt_registry import (
     PromptVariableError,
 )
 from ai_engineering_showcase.prompts import PROMPT_REGISTRY
+from ai_engineering_showcase.schemas import ChatResponse
 from ai_engineering_showcase.telemetry import configure_logging
 
 app = typer.Typer(help="AI Engineering Showcase CLI")
@@ -113,6 +115,61 @@ def query(
     answer = agent.answer(question, top_k=top_k)
     typer.echo(answer.model_dump_json(indent=2))
     typer.echo(render_citations(answer.citations), err=True)
+
+
+@app.command()
+def chat(
+    message: Annotated[
+        str | None,
+        typer.Option(help="Single message for non-interactive mode; omit to start a REPL."),
+    ] = None,
+    conversation_id: Annotated[
+        str | None,
+        typer.Option(help="Conversation to continue; omit to start a new one."),
+    ] = None,
+    index_path: Annotated[Path, typer.Option(help="Path to vector index.")] = Path(
+        ".artifacts/vector_store.json"
+    ),
+    store_path: Annotated[
+        Path, typer.Option(help="Directory holding conversation JSON files.")
+    ] = Path(".artifacts/conversations"),
+    top_k: Annotated[int, typer.Option(help="Number of chunks to retrieve.")] = 4,
+) -> None:
+    """Chat with the agent using persistent conversation memory.
+
+    With ``--message`` the command answers one message and prints a JSON
+    response containing the answer and the ``conversation_id`` to reuse.
+    Without ``--message`` it starts an interactive REPL reading from stdin
+    (finish with ``exit``, ``quit``, or end-of-input).
+    """
+    configure_logging()
+    settings = Settings(index_path=index_path, conversation_store_path=store_path)
+    agent = build_agent(settings)
+    store = build_conversation_store(settings)
+    if message is not None:
+        answer, resolved_id = agent.chat(
+            message, store=store, conversation_id=conversation_id, top_k=top_k
+        )
+        response = ChatResponse(conversation_id=resolved_id, result=answer)
+        typer.echo(response.model_dump_json(indent=2))
+        return
+    typer.echo("Interactive chat. Type 'exit' or 'quit' to leave.", err=True)
+    while True:
+        try:
+            line = input("you> ")
+        except EOFError:
+            break
+        question = line.strip()
+        if not question:
+            continue
+        if question.lower() in {"exit", "quit"}:
+            break
+        answer, conversation_id = agent.chat(
+            question, store=store, conversation_id=conversation_id, top_k=top_k
+        )
+        typer.echo(f"[conversation {conversation_id}]", err=True)
+        typer.echo(answer.answer)
+        typer.echo(render_citations(answer.citations), err=True)
 
 
 @app.command()

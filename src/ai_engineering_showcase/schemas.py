@@ -121,6 +121,26 @@ class QueryResponse(BaseModel):
     result: AgentAnswer
 
 
+class ChatRequest(BaseModel):
+    """API request for the `/chat` endpoint.
+
+    ``conversation_id`` is optional: omit it to start a new conversation, or
+    pass the identifier returned by a previous `/chat` call to continue with
+    the stored turns as context.
+    """
+
+    message: str = Field(min_length=1)
+    conversation_id: str | None = None
+    top_k: int = Field(default=4, ge=1, le=12)
+
+
+class ChatResponse(BaseModel):
+    """API response for the `/chat` endpoint."""
+
+    conversation_id: str
+    result: AgentAnswer
+
+
 class IndexRequest(BaseModel):
     """API request for rebuilding the index from a CSV path."""
 

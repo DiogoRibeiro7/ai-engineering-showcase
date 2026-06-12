@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ai_engineering_showcase.citations import build_citations
@@ -14,6 +15,15 @@ from ai_engineering_showcase.guardrails import (
     is_suspicious_context,
 )
 from ai_engineering_showcase.llm import LLMProvider
+from ai_engineering_showcase.memory import (
+    ConversationMemory,
+    ConversationStore,
+    ConversationTurn,
+    DeterministicQueryRewriter,
+    QueryRewrite,
+    QueryRewriter,
+    new_conversation_id,
+)
 from ai_engineering_showcase.prompts import build_grounded_prompt
 from ai_engineering_showcase.retrieval import Retriever
 from ai_engineering_showcase.schemas import AgentAnswer, Citation, SearchResult, ToolRunRecord
@@ -47,6 +57,7 @@ class FeedbackInsightAgent:
         *,
         telemetry: Telemetry | None = None,
         tools: ToolRegistry | None = None,
+        query_rewriter: QueryRewriter | None = None,
     ) -> None:
         """Wire the retriever (dense, lexical, or hybrid) to the LLM provider.
 
@@ -56,19 +67,35 @@ class FeedbackInsightAgent:
             telemetry: Optional telemetry emitter; defaults to a no-op instance.
             tools: Optional registry of local tools; when omitted the agent
                 answers every question with the plain RAG flow.
+            query_rewriter: Optional rewriter that converts follow-up questions
+                into standalone questions when conversation history is passed
+                to :meth:`answer`; defaults to the deterministic local rewriter.
         """
         self.query_engine = query_engine
         self.llm = llm
         self.telemetry = telemetry or Telemetry()
         self.tools = tools
         self.tool_router = ToolRouter(tools) if tools is not None else None
+        self.query_rewriter = query_rewriter or DeterministicQueryRewriter()
 
-    def answer(self, question: str, *, top_k: int = 4) -> AgentAnswer:
+    def answer(
+        self,
+        question: str,
+        *,
+        top_k: int = 4,
+        history: Sequence[ConversationTurn] | None = None,
+    ) -> AgentAnswer:
         """Answer a user question using retrieved feedback as evidence.
 
         Two deterministic guardrail gates protect the run: the input gate
         refuses unsafe questions before retrieval, and the context gate drops
         retrieved chunks carrying injection-style content before generation.
+
+        When ``history`` (previous conversation turns) is supplied, follow-up
+        questions are first rewritten into standalone questions using the last
+        turn, and the rewritten question drives routing, retrieval, and
+        generation. The full history is never sent to retrieval. Without
+        ``history`` the single-turn behaviour is unchanged.
         """
         correlation_id = self.telemetry.new_correlation_id()
         input_decision = check_input(question)
@@ -76,20 +103,29 @@ class FeedbackInsightAgent:
             return self._refused_answer(
                 question, input_decision, top_k=top_k, correlation_id=correlation_id
             )
-        route = self.route(question)
+        rewrite: QueryRewrite | None = None
+        effective_question = question
+        if history:
+            rewrite = self.query_rewriter.rewrite(question, history[-1])
+            effective_question = rewrite.rewritten
+        route = self.route(effective_question)
+        run_metadata = {
+            "route": route,
+            "top_k": top_k,
+            "question_chars": len(question),
+            "guardrail_allowed": True,
+        }
+        if rewrite is not None:
+            run_metadata["query_rewritten"] = rewrite.was_rewritten
+            run_metadata["rewrite_strategy"] = rewrite.strategy
         with self.telemetry.span(
             "agent_run_started",
             "agent_run_finished",
             correlation_id=correlation_id,
-            metadata={
-                "route": route,
-                "top_k": top_k,
-                "question_chars": len(question),
-                "guardrail_allowed": True,
-            },
+            metadata=run_metadata,
         ) as run_span:
             results = self._retrieve(
-                question, route=route, top_k=top_k, correlation_id=correlation_id
+                effective_question, route=route, top_k=top_k, correlation_id=correlation_id
             )
             context_decision = check_context([result.chunk.text for result in results])
             context_chunks_dropped = 0
@@ -100,12 +136,14 @@ class FeedbackInsightAgent:
                 context_chunks_dropped = len(results) - len(safe_results)
                 results = safe_results
                 run_span["guardrail_context_dropped"] = context_chunks_dropped
-            tool_record = self._maybe_run_tool(question, results, correlation_id=correlation_id)
+            tool_record = self._maybe_run_tool(
+                effective_question, results, correlation_id=correlation_id
+            )
             run_span["tool_used"] = tool_record.tool_name if tool_record is not None else None
             run_span["tool_status"] = (
                 tool_record.status if tool_record is not None else "not_selected"
             )
-            prompt = build_grounded_prompt(question, results, route=route)
+            prompt = build_grounded_prompt(effective_question, results, route=route)
             with self.telemetry.span(
                 "llm_call_started",
                 "llm_call_finished",
@@ -115,7 +153,9 @@ class FeedbackInsightAgent:
                     "prompt_chars": len(prompt),
                 },
             ) as llm_span:
-                raw_response = self.llm.generate(prompt, question=question, results=results)
+                raw_response = self.llm.generate(
+                    prompt, question=effective_question, results=results
+                )
                 llm_span["response_chars"] = len(raw_response)
             parsed = self._parse_response(raw_response)
             citations = build_citations(results)
@@ -133,6 +173,21 @@ class FeedbackInsightAgent:
                 )
             else:
                 answer_text = f"{answer_text}\n\nNote: {tool_record.summary}"
+        diagnostics: dict[str, object] = {
+            "retrieved_chunks": len(results),
+            "max_score": max((result.score for result in results), default=0.0),
+            "min_score": min((result.score for result in results), default=0.0),
+            "guardrail_context_dropped": context_chunks_dropped,
+            "tool_used": (
+                tool_record.tool_name
+                if tool_record is not None and tool_record.status == "ok"
+                else None
+            ),
+        }
+        if rewrite is not None:
+            diagnostics["query_rewritten"] = rewrite.was_rewritten
+            diagnostics["rewrite_strategy"] = rewrite.strategy
+            diagnostics["retrieval_question"] = rewrite.rewritten
         answer = AgentAnswer(
             question=question,
             answer=answer_text,
@@ -142,17 +197,7 @@ class FeedbackInsightAgent:
             confidence=confidence,
             guardrail=input_decision,
             tool_run=tool_record,
-            diagnostics={
-                "retrieved_chunks": len(results),
-                "max_score": max((result.score for result in results), default=0.0),
-                "min_score": min((result.score for result in results), default=0.0),
-                "guardrail_context_dropped": context_chunks_dropped,
-                "tool_used": (
-                    tool_record.tool_name
-                    if tool_record is not None and tool_record.status == "ok"
-                    else None
-                ),
-            },
+            diagnostics=diagnostics,
         )
         log_event(
             "agent_answer_created",
@@ -165,6 +210,50 @@ class FeedbackInsightAgent:
             },
         )
         return answer
+
+    def chat(
+        self,
+        message: str,
+        *,
+        store: ConversationStore,
+        conversation_id: str | None = None,
+        top_k: int = 4,
+    ) -> tuple[AgentAnswer, str]:
+        """Answer a message inside a stored conversation and persist the turn.
+
+        Loads the conversation from ``store`` (or starts a new one when
+        ``conversation_id`` is ``None``), answers with the previous turns as
+        context, records the new turn (user message, answer, cited document
+        IDs, route, and confidence), and saves the conversation back.
+
+        Returns:
+            The agent answer and the conversation identifier (newly generated
+            when none was supplied).
+        """
+        resolved_id = conversation_id or new_conversation_id()
+        memory = store.get(resolved_id) or ConversationMemory(conversation_id=resolved_id)
+        answer = self.answer(message, top_k=top_k, history=memory.turns)
+        document_ids: list[str] = []
+        for citation in answer.citations:
+            if citation.document_id not in document_ids:
+                document_ids.append(citation.document_id)
+        turn_metadata: dict[str, object] = {
+            "route": answer.route,
+            "confidence": answer.confidence,
+        }
+        retrieval_question = answer.diagnostics.get("retrieval_question")
+        if retrieval_question is not None:
+            turn_metadata["retrieval_question"] = retrieval_question
+        memory.add_turn(
+            ConversationTurn(
+                user_message=message,
+                assistant_answer=answer.answer,
+                retrieved_document_ids=document_ids,
+                metadata=turn_metadata,
+            )
+        )
+        store.save(memory)
+        return answer, resolved_id
 
     def _maybe_run_tool(
         self,
