@@ -22,6 +22,7 @@ from ai_engineering_showcase.factory import (
     build_agent,
     build_index,
     build_retriever,
+    build_telemetry,
     load_or_build_index,
 )
 from ai_engineering_showcase.prompt_registry import (
@@ -59,7 +60,8 @@ def index(
 ) -> None:
     """Build a local vector index."""
     configure_logging()
-    vector_store = build_index(input, index_path, embedding_dim=embedding_dim)
+    telemetry = build_telemetry(Settings(index_path=index_path))
+    vector_store = build_index(input, index_path, embedding_dim=embedding_dim, telemetry=telemetry)
     typer.echo(f"Indexed {vector_store.size} chunks into {index_path}")
 
 
@@ -143,11 +145,12 @@ def evaluate(
         dense_weight=dense_weight,
         lexical_weight=lexical_weight,
     )
-    vector_store = load_or_build_index(settings)
+    telemetry = build_telemetry(settings)
+    vector_store = load_or_build_index(settings, telemetry=telemetry)
     query_engine = build_retriever(settings, vector_store)
-    agent = build_agent(settings)
+    agent = build_agent(settings, telemetry=telemetry)
     cases = load_evaluation_cases(queries)
-    report = evaluate_system(query_engine, agent, cases, top_k=top_k)
+    report = evaluate_system(query_engine, agent, cases, top_k=top_k, telemetry=telemetry)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(report.model_dump_json(indent=2), encoding="utf-8")
     typer.echo(report.model_dump_json(indent=2))

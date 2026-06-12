@@ -13,7 +13,20 @@ from ai_engineering_showcase.lexical_search import BM25Retriever
 from ai_engineering_showcase.llm import DeterministicLLM, LLMProvider, OpenAIChatLLM
 from ai_engineering_showcase.retrieval import HybridRetriever, QueryEngine, Retriever
 from ai_engineering_showcase.schemas import DocumentChunk
+from ai_engineering_showcase.telemetry import JsonlTelemetrySink, Telemetry
 from ai_engineering_showcase.vector_store import InMemoryVectorStore
+
+
+def build_telemetry(settings: Settings) -> Telemetry:
+    """Construct the telemetry emitter configured by the settings.
+
+    Telemetry is disabled (a no-op emitter) unless ``AI_SHOWCASE_TELEMETRY_ENABLED``
+    is set; when enabled, events are appended to the JSONL file configured by
+    ``AI_SHOWCASE_TELEMETRY_PATH``.
+    """
+    if not settings.telemetry_enabled:
+        return Telemetry()
+    return Telemetry(sink=JsonlTelemetrySink(settings.telemetry_path))
 
 
 def chunk_to_embedding_text(chunk: DocumentChunk) -> str:
@@ -35,10 +48,14 @@ def chunk_to_embedding_text(chunk: DocumentChunk) -> str:
 
 
 def build_index(
-    input_path: str | Path, index_path: str | Path, *, embedding_dim: int
+    input_path: str | Path,
+    index_path: str | Path,
+    *,
+    embedding_dim: int,
+    telemetry: Telemetry | None = None,
 ) -> InMemoryVectorStore:
     """Build and persist a vector index from feedback CSV data."""
-    records = load_feedback_csv(input_path)
+    records = load_feedback_csv(input_path, telemetry=telemetry)
     chunks = feedback_to_chunks(records)
     embedding_model = HashingEmbeddingModel(dim=embedding_dim)
     vectors = embedding_model.embed([chunk_to_embedding_text(chunk) for chunk in chunks])
@@ -48,7 +65,9 @@ def build_index(
     return vector_store
 
 
-def load_or_build_index(settings: Settings) -> InMemoryVectorStore:
+def load_or_build_index(
+    settings: Settings, *, telemetry: Telemetry | None = None
+) -> InMemoryVectorStore:
     """Load an index from disk or build it from configured data."""
     settings.ensure_artifact_dir()
     if settings.index_path.exists():
@@ -57,6 +76,7 @@ def load_or_build_index(settings: Settings) -> InMemoryVectorStore:
         settings.data_path,
         settings.index_path,
         embedding_dim=settings.embedding_dim,
+        telemetry=telemetry,
     )
 
 
@@ -92,8 +112,15 @@ def build_llm(settings: Settings) -> LLMProvider:
     return DeterministicLLM()
 
 
-def build_agent(settings: Settings) -> FeedbackInsightAgent:
-    """Construct a fully wired feedback insight agent."""
-    vector_store = load_or_build_index(settings)
+def build_agent(settings: Settings, *, telemetry: Telemetry | None = None) -> FeedbackInsightAgent:
+    """Construct a fully wired feedback insight agent.
+
+    When no telemetry emitter is supplied, one is built from the settings
+    (a no-op unless telemetry is enabled via the environment).
+    """
+    telemetry = telemetry or build_telemetry(settings)
+    vector_store = load_or_build_index(settings, telemetry=telemetry)
     retriever = build_retriever(settings, vector_store)
-    return FeedbackInsightAgent(query_engine=retriever, llm=build_llm(settings))
+    return FeedbackInsightAgent(
+        query_engine=retriever, llm=build_llm(settings), telemetry=telemetry
+    )

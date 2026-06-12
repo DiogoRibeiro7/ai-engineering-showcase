@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     llm_provider: Literal["local", "openai"] = "local"
     openai_api_key: str | None = Field(default=None, validation_alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4o-mini", validation_alias="OPENAI_MODEL")
+    telemetry_enabled: bool = Field(default=False)
+    telemetry_path: Path = Field(default=Path(".artifacts/telemetry.jsonl"))
 
     def ensure_artifact_dir(self) -> None:
         """Create the parent folder used by local artifacts."""

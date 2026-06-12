@@ -197,10 +197,43 @@ Environment variables:
 | `AI_SHOWCASE_DENSE_WEIGHT` | `0.6` | Dense score weight used by the hybrid retriever. |
 | `AI_SHOWCASE_LEXICAL_WEIGHT` | `0.4` | Lexical (BM25) score weight used by the hybrid retriever. |
 | `AI_SHOWCASE_LLM_PROVIDER` | `local` | `local` or `openai`. |
+| `AI_SHOWCASE_TELEMETRY_ENABLED` | `false` | Enable structured telemetry events. |
+| `AI_SHOWCASE_TELEMETRY_PATH` | `.artifacts/telemetry.jsonl` | JSONL file that telemetry events are appended to. |
 | `OPENAI_API_KEY` | empty | Required only when using the optional OpenAI provider. |
 | `OPENAI_MODEL` | `gpt-4o-mini` | Model name for the optional OpenAI provider. |
 
 Create a local `.env` from `.env.example` if needed.
+
+## Telemetry
+
+The project emits OpenTelemetry-style structured events (`ingestion_started`/`_finished`,
+`retrieval_started`/`_finished`, `llm_call_started`/`_finished`, `agent_run_started`/`_finished`,
+`evaluation_finished`). Each event carries a name, an ISO-8601 UTC timestamp, a
+`correlation_id` shared by all events of one logical operation, a `duration_ms` for finished
+events, and a metadata dictionary (latency, retrieval counts and scores, provider name,
+route, confidence, evaluation aggregates).
+
+Telemetry is disabled by default and adds no side effects. Enable it via environment
+variables and run any command; one JSON object per event is appended to the JSONL trace file:
+
+```bash
+export AI_SHOWCASE_TELEMETRY_ENABLED=true
+export AI_SHOWCASE_TELEMETRY_PATH=.artifacts/telemetry.jsonl
+
+poetry run ai-showcase query "Why are enterprise customers unhappy with onboarding?"
+cat .artifacts/telemetry.jsonl
+```
+
+Example trace line:
+
+```json
+{"correlation_id": "0f9c2b...", "duration_ms": 1.84, "metadata": {"results": 4, "retriever": "QueryEngine", "route": "onboarding", "status": "ok", "top_k": 4, "candidate_k": 16, "max_score": 0.93, "min_score": 0.41}, "name": "retrieval_finished", "timestamp": "2026-06-11T10:15:02.123456+00:00"}
+```
+
+In code, sinks are injected explicitly: `Telemetry(sink=JsonlTelemetrySink(path))` writes
+JSONL traces, `Telemetry(sink=InMemoryTelemetrySink())` captures events for tests, and a
+bare `Telemetry()` is a no-op. `factory.build_telemetry(settings)` builds the configured
+emitter from the environment.
 
 ## Why this project is useful in interviews
 

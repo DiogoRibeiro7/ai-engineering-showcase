@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -20,6 +21,7 @@ from pydantic import BaseModel, Field
 from ai_engineering_showcase.agent import FeedbackInsightAgent
 from ai_engineering_showcase.retrieval import Retriever
 from ai_engineering_showcase.schemas import AgentAnswer, EvaluationCase
+from ai_engineering_showcase.telemetry import Telemetry
 
 REFUSAL_MARKERS = (
     "could not find enough evidence",
@@ -298,15 +300,37 @@ def evaluate_system(
     cases: list[EvaluationCase],
     *,
     top_k: int = 4,
+    telemetry: Telemetry | None = None,
 ) -> EvaluationReport:
     """Evaluate retrieval and answer quality and aggregate a typed report.
 
     Retrieval metrics are averaged over answerable cases only, because
     unanswerable cases have no relevant documents to retrieve. Answer metrics
-    are averaged over all cases.
+    are averaged over all cases. When a telemetry emitter is provided, an
+    ``evaluation_finished`` event with aggregate metrics is emitted.
     """
+    telemetry = telemetry or Telemetry()
+    start = time.perf_counter()
     case_results = [evaluate_case(query_engine, agent, case, top_k=top_k) for case in cases]
-    return aggregate_report(case_results, top_k=top_k)
+    report = aggregate_report(case_results, top_k=top_k)
+    telemetry.emit(
+        "evaluation_finished",
+        correlation_id=telemetry.new_correlation_id(),
+        duration_ms=round((time.perf_counter() - start) * 1000.0, 3),
+        metadata={
+            "total_cases": report.total_cases,
+            "top_k": report.top_k,
+            "precision_at_k": report.retrieval.precision_at_k,
+            "recall_at_k": report.retrieval.recall_at_k,
+            "mean_reciprocal_rank": report.retrieval.mean_reciprocal_rank,
+            "context_hit_rate": report.retrieval.context_hit_rate,
+            "keyword_coverage": report.answers.keyword_coverage,
+            "groundedness": report.answers.groundedness,
+            "refusal_correctness": report.answers.refusal_correctness,
+            "citation_alignment": report.answers.citation_alignment,
+        },
+    )
+    return report
 
 
 def aggregate_report(case_results: list[CaseResult], *, top_k: int = 4) -> EvaluationReport:

@@ -10,7 +10,7 @@ from ai_engineering_showcase.llm import LLMProvider
 from ai_engineering_showcase.prompts import build_grounded_prompt
 from ai_engineering_showcase.retrieval import Retriever
 from ai_engineering_showcase.schemas import AgentAnswer, Citation, SearchResult
-from ai_engineering_showcase.telemetry import log_event
+from ai_engineering_showcase.telemetry import Telemetry, log_event
 
 
 @dataclass(frozen=True)
@@ -32,22 +32,57 @@ ROUTE_RULES = (
 class FeedbackInsightAgent:
     """Evidence-grounded feedback intelligence agent."""
 
-    def __init__(self, query_engine: Retriever, llm: LLMProvider) -> None:
-        """Wire the retriever (dense, lexical, or hybrid) to the LLM provider."""
+    def __init__(
+        self,
+        query_engine: Retriever,
+        llm: LLMProvider,
+        *,
+        telemetry: Telemetry | None = None,
+    ) -> None:
+        """Wire the retriever (dense, lexical, or hybrid) to the LLM provider.
+
+        Args:
+            query_engine: Retriever used to gather evidence.
+            llm: Text generation provider.
+            telemetry: Optional telemetry emitter; defaults to a no-op instance.
+        """
         self.query_engine = query_engine
         self.llm = llm
+        self.telemetry = telemetry or Telemetry()
 
     def answer(self, question: str, *, top_k: int = 4) -> AgentAnswer:
         """Answer a user question using retrieved feedback as evidence."""
         if not question.strip():
             raise ValueError("question cannot be empty")
+        correlation_id = self.telemetry.new_correlation_id()
         route = self.route(question)
-        results = self._retrieve(question, route=route, top_k=top_k)
-        prompt = build_grounded_prompt(question, results, route=route)
-        raw_response = self.llm.generate(prompt, question=question, results=results)
-        parsed = self._parse_response(raw_response)
-        citations = build_citations(results)
-        confidence = self._confidence(results, citations)
+        with self.telemetry.span(
+            "agent_run_started",
+            "agent_run_finished",
+            correlation_id=correlation_id,
+            metadata={"route": route, "top_k": top_k, "question_chars": len(question)},
+        ) as run_span:
+            results = self._retrieve(
+                question, route=route, top_k=top_k, correlation_id=correlation_id
+            )
+            prompt = build_grounded_prompt(question, results, route=route)
+            with self.telemetry.span(
+                "llm_call_started",
+                "llm_call_finished",
+                correlation_id=correlation_id,
+                metadata={
+                    "provider": type(self.llm).__name__,
+                    "prompt_chars": len(prompt),
+                },
+            ) as llm_span:
+                raw_response = self.llm.generate(prompt, question=question, results=results)
+                llm_span["response_chars"] = len(raw_response)
+            parsed = self._parse_response(raw_response)
+            citations = build_citations(results)
+            confidence = self._confidence(results, citations)
+            run_span["citations"] = len(citations)
+            run_span["confidence"] = confidence
+            run_span["retrieved_chunks"] = len(results)
 
         answer = AgentAnswer(
             question=question,
@@ -81,7 +116,9 @@ class FeedbackInsightAgent:
                 return rule.name
         return "general_insight"
 
-    def _retrieve(self, question: str, *, route: str, top_k: int) -> list[SearchResult]:
+    def _retrieve(
+        self, question: str, *, route: str, top_k: int, correlation_id: str | None = None
+    ) -> list[SearchResult]:
         """Retrieve and rerank candidates with lightweight domain-aware signals.
 
         The first stage uses vector similarity. The second stage adds simple lexical
@@ -89,12 +126,28 @@ class FeedbackInsightAgent:
         retriever generic, then rerank with features that reflect the product domain.
         """
         candidate_k = max(top_k * 4, top_k)
-        candidates = self.query_engine.search(question, top_k=candidate_k)
-        scored: list[SearchResult] = []
-        for result in candidates:
-            adjusted_score = self._combined_score(question, route, result)
-            scored.append(SearchResult(chunk=result.chunk, score=adjusted_score))
-        return sorted(scored, key=lambda item: item.score, reverse=True)[:top_k]
+        correlation_id = correlation_id or self.telemetry.new_correlation_id()
+        with self.telemetry.span(
+            "retrieval_started",
+            "retrieval_finished",
+            correlation_id=correlation_id,
+            metadata={
+                "retriever": type(self.query_engine).__name__,
+                "route": route,
+                "top_k": top_k,
+                "candidate_k": candidate_k,
+            },
+        ) as span:
+            candidates = self.query_engine.search(question, top_k=candidate_k)
+            scored: list[SearchResult] = []
+            for result in candidates:
+                adjusted_score = self._combined_score(question, route, result)
+                scored.append(SearchResult(chunk=result.chunk, score=adjusted_score))
+            ranked = sorted(scored, key=lambda item: item.score, reverse=True)[:top_k]
+            span["results"] = len(ranked)
+            span["max_score"] = max((result.score for result in ranked), default=0.0)
+            span["min_score"] = min((result.score for result in ranked), default=0.0)
+        return ranked
 
     def _combined_score(self, question: str, route: str, result: SearchResult) -> float:
         """Combine vector, lexical, route, and metadata features."""
