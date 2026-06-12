@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
@@ -72,12 +72,29 @@ class Citation(BaseModel):
     score: float
 
 
+class ToolRunRecord(BaseModel):
+    """Metadata about one tool invocation performed during an agent run.
+
+    ``status`` is ``ok`` when the tool ran successfully, ``refused`` when an
+    unknown or unavailable tool was requested, and ``error`` when a registered
+    tool failed. ``output`` carries the structured tool output so API and CLI
+    consumers can inspect exactly what the tool produced.
+    """
+
+    tool_name: str
+    status: Literal["ok", "refused", "error"]
+    summary: str
+    output: dict[str, Any] = Field(default_factory=dict)
+
+
 class AgentAnswer(BaseModel):
     """Final answer returned by the insight agent.
 
     ``guardrail`` records the deterministic safety decision made for the
     request, so API and CLI consumers can see whether the question was
-    answered normally or refused (and why).
+    answered normally or refused (and why). ``tool_run`` records the tool
+    invoked for the question, if any, making tool use visible in the agent
+    answer and the API response.
     """
 
     question: str
@@ -87,6 +104,7 @@ class AgentAnswer(BaseModel):
     route: str
     confidence: float
     guardrail: GuardrailDecision | None = None
+    tool_run: ToolRunRecord | None = None
     diagnostics: dict[str, Any] = Field(default_factory=dict)
 
 

@@ -30,13 +30,19 @@ Query engine
 Route selection
    │
    ▼
-Grounded prompt
+Tool router (keyword intent matching)
+   │            │
+   │            ▼
+   │      Local tool run (sentiment / clusters / ticket draft)
+   │            │
+   ▼            ▼
+Grounded prompt + tool output
    │
    ▼
 LLM provider
    │
    ▼
-Cited answer + recommended actions + diagnostics
+Cited answer + tool metadata + recommended actions + diagnostics
 ```
 
 ## Components
@@ -59,7 +65,28 @@ Cited answer + recommended actions + diagnostics
 
 ### Agent
 
-`agent.py` performs query routing, retrieval, prompt building, generation, response parsing, citation construction, and confidence scoring.
+`agent.py` performs query routing, retrieval, tool routing and execution, prompt building, generation, response parsing, citation construction, and confidence scoring.
+
+The full agent flow per question is:
+
+1. **Input guardrail gate** (`guardrails.check_input`): unsafe questions are refused before any retrieval or tool use.
+2. **Route selection**: a keyword router classifies the question into a stable route for observability and prompts.
+3. **Retrieval + reranking**: the configured retriever gathers candidate chunks; lightweight domain signals rerank them.
+4. **Context guardrail gate** (`guardrails.check_context`): retrieved chunks carrying injection-style content are dropped.
+5. **Tool routing** (`tools.ToolRouter`): a deterministic keyword router selects at most one local tool. Explicit requests for unknown tools (`use the <name> tool`) are refused gracefully and the run continues as plain RAG.
+6. **Tool execution**: the selected tool validates its Pydantic input schema and runs locally, wrapped in `tool_run_started`/`tool_run_finished` telemetry spans. Tool failures degrade to an `error` record instead of failing the run.
+7. **Answer generation**: the LLM provider produces the cited answer; a successful tool run appends a `Tool insight (...)` line to the answer text.
+8. **Response assembly**: the answer carries citations, the guardrail decision, the `tool_run` record (name, status, summary, structured output), and diagnostics. The same metadata is returned by the API `/query` response.
+
+### Tools
+
+`tools.py` implements a small deterministic tool-use framework. Every tool conforms to a typed interface: a stable `name`, a `description`, a Pydantic `input_schema`, a Pydantic `output_schema`, and a validated `execute` entry point. Three local tools ship by default:
+
+- **`sentiment_summary`** (`SentimentSummaryTool`): aggregates the rating and sentiment distribution (positive ≥ 4, neutral = 3, negative ≤ 2) over the indexed feedback, with optional segment and channel filters.
+- **`issue_cluster`** (`IssueClusterTool`): groups recurring customer issues using deterministic keyword/term clusters (onboarding, integrations, reporting, pricing, support, performance, documentation) and reports counts, supporting documents, and example quotes.
+- **`ticket_draft`** (`TicketDraftTool`): drafts a support ticket (title, body, priority, references, tags) from the question and the retrieved evidence chunks.
+
+Routing is keyword/intent based (`TOOL_ROUTES`) with no function-calling API, so tool selection is reproducible in tests and CI. Tools run against the same indexed chunks used for retrieval, so they need no extra data source. Example tool queries live in `examples/tool_queries.jsonl`.
 
 ### Guardrails
 

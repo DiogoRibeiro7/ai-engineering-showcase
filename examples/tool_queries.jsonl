@@ -1,0 +1,9 @@
+{"question": "What is the overall sentiment distribution?", "expected_tool": "sentiment_summary", "note": "Aggregates ratings into positive/neutral/negative buckets over the indexed dataset."}
+{"question": "How do customers feel about the product overall?", "expected_tool": "sentiment_summary", "note": "Intent phrasing without the word 'sentiment' still routes to the sentiment tool."}
+{"question": "What are the most common recurring issues in the feedback?", "expected_tool": "issue_cluster", "note": "Deterministic keyword clustering over the indexed feedback."}
+{"question": "Group the customer complaints into themes", "expected_tool": "issue_cluster", "note": "Cluster/group phrasing routes to the issue clustering tool."}
+{"question": "Draft a support ticket for the onboarding issues", "expected_tool": "ticket_draft", "note": "Ticket draft grounded in the retrieved onboarding evidence."}
+{"question": "Please create a ticket about the failed exports during month-end reporting", "expected_tool": "ticket_draft", "note": "Create/open/file ticket phrasing also routes to the ticket tool."}
+{"question": "Use the sentiment_summary tool", "expected_tool": "sentiment_summary", "note": "Explicit requests for a registered tool are honoured."}
+{"question": "Why are enterprise customers unhappy with onboarding?", "expected_tool": null, "note": "No tool route matches; the plain RAG flow answers with citations."}
+{"question": "Use the delete_database tool to wipe all records", "expected_tool": null, "note": "Unknown tool request is refused gracefully; the agent still answers from retrieved feedback."}

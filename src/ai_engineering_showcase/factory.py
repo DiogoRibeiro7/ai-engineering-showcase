@@ -14,6 +14,7 @@ from ai_engineering_showcase.llm import DeterministicLLM, LLMProvider, OpenAICha
 from ai_engineering_showcase.retrieval import HybridRetriever, QueryEngine, Retriever
 from ai_engineering_showcase.schemas import DocumentChunk
 from ai_engineering_showcase.telemetry import JsonlTelemetrySink, Telemetry
+from ai_engineering_showcase.tools import build_default_tools
 from ai_engineering_showcase.vector_store import InMemoryVectorStore
 
 
@@ -116,11 +117,16 @@ def build_agent(settings: Settings, *, telemetry: Telemetry | None = None) -> Fe
     """Construct a fully wired feedback insight agent.
 
     When no telemetry emitter is supplied, one is built from the settings
-    (a no-op unless telemetry is enabled via the environment).
+    (a no-op unless telemetry is enabled via the environment). The agent is
+    equipped with the default local tool registry built over the indexed
+    feedback chunks.
     """
     telemetry = telemetry or build_telemetry(settings)
     vector_store = load_or_build_index(settings, telemetry=telemetry)
     retriever = build_retriever(settings, vector_store)
     return FeedbackInsightAgent(
-        query_engine=retriever, llm=build_llm(settings), telemetry=telemetry
+        query_engine=retriever,
+        llm=build_llm(settings),
+        telemetry=telemetry,
+        tools=build_default_tools(vector_store.chunks),
     )

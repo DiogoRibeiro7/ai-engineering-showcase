@@ -16,8 +16,9 @@ from ai_engineering_showcase.guardrails import (
 from ai_engineering_showcase.llm import LLMProvider
 from ai_engineering_showcase.prompts import build_grounded_prompt
 from ai_engineering_showcase.retrieval import Retriever
-from ai_engineering_showcase.schemas import AgentAnswer, Citation, SearchResult
+from ai_engineering_showcase.schemas import AgentAnswer, Citation, SearchResult, ToolRunRecord
 from ai_engineering_showcase.telemetry import Telemetry, log_event
+from ai_engineering_showcase.tools import ToolError, ToolRegistry, ToolRouter
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,7 @@ class FeedbackInsightAgent:
         llm: LLMProvider,
         *,
         telemetry: Telemetry | None = None,
+        tools: ToolRegistry | None = None,
     ) -> None:
         """Wire the retriever (dense, lexical, or hybrid) to the LLM provider.
 
@@ -52,10 +54,14 @@ class FeedbackInsightAgent:
             query_engine: Retriever used to gather evidence.
             llm: Text generation provider.
             telemetry: Optional telemetry emitter; defaults to a no-op instance.
+            tools: Optional registry of local tools; when omitted the agent
+                answers every question with the plain RAG flow.
         """
         self.query_engine = query_engine
         self.llm = llm
         self.telemetry = telemetry or Telemetry()
+        self.tools = tools
+        self.tool_router = ToolRouter(tools) if tools is not None else None
 
     def answer(self, question: str, *, top_k: int = 4) -> AgentAnswer:
         """Answer a user question using retrieved feedback as evidence.
@@ -94,6 +100,11 @@ class FeedbackInsightAgent:
                 context_chunks_dropped = len(results) - len(safe_results)
                 results = safe_results
                 run_span["guardrail_context_dropped"] = context_chunks_dropped
+            tool_record = self._maybe_run_tool(question, results, correlation_id=correlation_id)
+            run_span["tool_used"] = tool_record.tool_name if tool_record is not None else None
+            run_span["tool_status"] = (
+                tool_record.status if tool_record is not None else "not_selected"
+            )
             prompt = build_grounded_prompt(question, results, route=route)
             with self.telemetry.span(
                 "llm_call_started",
@@ -113,19 +124,34 @@ class FeedbackInsightAgent:
             run_span["confidence"] = confidence
             run_span["retrieved_chunks"] = len(results)
 
+        answer_text = parsed["answer"]
+        if tool_record is not None:
+            if tool_record.status == "ok":
+                answer_text = (
+                    f"{answer_text}\n\n"
+                    f"Tool insight ({tool_record.tool_name}): {tool_record.summary}"
+                )
+            else:
+                answer_text = f"{answer_text}\n\nNote: {tool_record.summary}"
         answer = AgentAnswer(
             question=question,
-            answer=parsed["answer"],
+            answer=answer_text,
             recommended_actions=parsed["actions"],
             citations=citations,
             route=route,
             confidence=confidence,
             guardrail=input_decision,
+            tool_run=tool_record,
             diagnostics={
                 "retrieved_chunks": len(results),
                 "max_score": max((result.score for result in results), default=0.0),
                 "min_score": min((result.score for result in results), default=0.0),
                 "guardrail_context_dropped": context_chunks_dropped,
+                "tool_used": (
+                    tool_record.tool_name
+                    if tool_record is not None and tool_record.status == "ok"
+                    else None
+                ),
             },
         )
         log_event(
@@ -135,9 +161,73 @@ class FeedbackInsightAgent:
                 "top_k": top_k,
                 "citations": len(citations),
                 "confidence": confidence,
+                "tool_used": tool_record.tool_name if tool_record is not None else None,
             },
         )
         return answer
+
+    def _maybe_run_tool(
+        self,
+        question: str,
+        results: list[SearchResult],
+        *,
+        correlation_id: str,
+    ) -> ToolRunRecord | None:
+        """Route the question to a local tool and run it with telemetry.
+
+        Returns ``None`` when no tool registry is configured or no tool route
+        matches (the plain RAG flow continues unchanged). Unknown explicit
+        tool requests and tool failures produce a ``refused``/``error`` record
+        instead of raising, so the agent always answers gracefully.
+        """
+        if self.tools is None or self.tool_router is None:
+            return None
+        selection = self.tool_router.select(question)
+        if selection.status == "no_tool":
+            return None
+        if selection.status == "unknown_tool":
+            self.telemetry.emit(
+                "tool_run_refused",
+                correlation_id=correlation_id,
+                metadata={"requested_tool": selection.tool_name, "reason": selection.reason},
+            )
+            log_event("tool_request_refused", {"requested_tool": selection.tool_name})
+            return ToolRunRecord(
+                tool_name=selection.tool_name or "unknown",
+                status="refused",
+                summary=(
+                    f"The requested tool '{selection.tool_name}' is not available. "
+                    f"Available tools: {', '.join(self.tools.names())}. "
+                    "Answered from retrieved feedback instead."
+                ),
+            )
+        tool = self.tools.get(selection.tool_name or "")
+        if tool is None:  # Defensive: the router only selects registered tools.
+            return None
+        payload = tool.build_payload(question, results)
+        try:
+            with self.telemetry.span(
+                "tool_run_started",
+                "tool_run_finished",
+                correlation_id=correlation_id,
+                metadata={"tool": tool.name, "reason": selection.reason},
+            ) as tool_span:
+                output = tool.execute(payload)
+                tool_span["output_fields"] = len(output.model_dump())
+        except ToolError as exc:
+            log_event("tool_run_failed", {"tool": tool.name, "error": str(exc)})
+            return ToolRunRecord(
+                tool_name=tool.name,
+                status="error",
+                summary=f"Tool '{tool.name}' failed and was skipped: {exc}",
+            )
+        log_event("tool_run_succeeded", {"tool": tool.name})
+        return ToolRunRecord(
+            tool_name=tool.name,
+            status="ok",
+            summary=output.render(),
+            output=output.model_dump(),
+        )
 
     def _refused_answer(
         self,
