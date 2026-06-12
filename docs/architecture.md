@@ -61,6 +61,10 @@ Cited answer + recommended actions + diagnostics
 
 `agent.py` performs query routing, retrieval, prompt building, generation, response parsing, citation construction, and confidence scoring.
 
+### Guardrails
+
+`guardrails.py` provides a deterministic safety layer with two gates: an input check before retrieval (empty queries, prompt injection, system-prompt disclosure, context-override and unsupported data access requests) and a context check before generation that drops retrieved chunks carrying instruction-override content. Decisions are regex-based, typed (`GuardrailDecision`), and attached to every agent answer and API response.
+
 ### LLM provider
 
 `llm.py` defines an `LLMProvider` protocol. The default provider is deterministic and local. The optional OpenAI-compatible provider shows how to connect to external inference while keeping the rest of the system unchanged.
@@ -90,7 +94,7 @@ A production version should include:
 - Tenant isolation.
 - PII redaction before indexing.
 - Rate limiting and authentication.
-- Prompt injection checks.
+- Prompt injection checks (a deterministic baseline ships in `guardrails.py`).
 - Data lineage for every generated answer.
 - Human feedback loops.
 - Monitoring for retrieval drift and answer degradation.

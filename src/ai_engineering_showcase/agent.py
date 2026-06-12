@@ -6,6 +6,13 @@ import re
 from dataclasses import dataclass
 
 from ai_engineering_showcase.citations import build_citations
+from ai_engineering_showcase.guardrails import (
+    SAFE_REFUSAL,
+    GuardrailDecision,
+    check_context,
+    check_input,
+    is_suspicious_context,
+)
 from ai_engineering_showcase.llm import LLMProvider
 from ai_engineering_showcase.prompts import build_grounded_prompt
 from ai_engineering_showcase.retrieval import Retriever
@@ -51,20 +58,42 @@ class FeedbackInsightAgent:
         self.telemetry = telemetry or Telemetry()
 
     def answer(self, question: str, *, top_k: int = 4) -> AgentAnswer:
-        """Answer a user question using retrieved feedback as evidence."""
-        if not question.strip():
-            raise ValueError("question cannot be empty")
+        """Answer a user question using retrieved feedback as evidence.
+
+        Two deterministic guardrail gates protect the run: the input gate
+        refuses unsafe questions before retrieval, and the context gate drops
+        retrieved chunks carrying injection-style content before generation.
+        """
         correlation_id = self.telemetry.new_correlation_id()
+        input_decision = check_input(question)
+        if not input_decision.allowed:
+            return self._refused_answer(
+                question, input_decision, top_k=top_k, correlation_id=correlation_id
+            )
         route = self.route(question)
         with self.telemetry.span(
             "agent_run_started",
             "agent_run_finished",
             correlation_id=correlation_id,
-            metadata={"route": route, "top_k": top_k, "question_chars": len(question)},
+            metadata={
+                "route": route,
+                "top_k": top_k,
+                "question_chars": len(question),
+                "guardrail_allowed": True,
+            },
         ) as run_span:
             results = self._retrieve(
                 question, route=route, top_k=top_k, correlation_id=correlation_id
             )
+            context_decision = check_context([result.chunk.text for result in results])
+            context_chunks_dropped = 0
+            if not context_decision.allowed:
+                safe_results = [
+                    result for result in results if not is_suspicious_context(result.chunk.text)
+                ]
+                context_chunks_dropped = len(results) - len(safe_results)
+                results = safe_results
+                run_span["guardrail_context_dropped"] = context_chunks_dropped
             prompt = build_grounded_prompt(question, results, route=route)
             with self.telemetry.span(
                 "llm_call_started",
@@ -91,10 +120,12 @@ class FeedbackInsightAgent:
             citations=citations,
             route=route,
             confidence=confidence,
+            guardrail=input_decision,
             diagnostics={
                 "retrieved_chunks": len(results),
                 "max_score": max((result.score for result in results), default=0.0),
                 "min_score": min((result.score for result in results), default=0.0),
+                "guardrail_context_dropped": context_chunks_dropped,
             },
         )
         log_event(
@@ -107,6 +138,45 @@ class FeedbackInsightAgent:
             },
         )
         return answer
+
+    def _refused_answer(
+        self,
+        question: str,
+        decision: GuardrailDecision,
+        *,
+        top_k: int,
+        correlation_id: str,
+    ) -> AgentAnswer:
+        """Build a safe refusal answer for a question blocked by guardrails."""
+        with self.telemetry.span(
+            "agent_run_started",
+            "agent_run_finished",
+            correlation_id=correlation_id,
+            metadata={
+                "route": "guardrail_refusal",
+                "top_k": top_k,
+                "question_chars": len(question),
+                "guardrail_allowed": False,
+                "guardrail_severity": decision.severity,
+                "guardrail_reason": decision.reason,
+            },
+        ) as run_span:
+            run_span["citations"] = 0
+            run_span["confidence"] = 0.0
+        log_event(
+            "agent_query_blocked",
+            {"reason": decision.reason, "severity": decision.severity},
+        )
+        return AgentAnswer(
+            question=question,
+            answer=decision.suggested_response or SAFE_REFUSAL,
+            recommended_actions=[],
+            citations=[],
+            route="guardrail_refusal",
+            confidence=0.0,
+            guardrail=decision,
+            diagnostics={"retrieved_chunks": 0, "max_score": 0.0, "min_score": 0.0},
+        )
 
     def route(self, question: str) -> str:
         """Classify a question into a stable route for observability and prompts."""

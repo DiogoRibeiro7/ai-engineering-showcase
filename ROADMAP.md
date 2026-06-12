@@ -32,7 +32,7 @@ This roadmap is designed to evolve the repository from a compact portfolio proje
 - [x] Add a local experiment runner for comparing retrieval and generation configurations.
 - [ ] Add MLflow or Weights & Biases experiment tracking.
 - [ ] Add OpenTelemetry traces for retrieval and generation.
-- [ ] Add prompt-injection test cases.
+- [x] Add deterministic guardrails with prompt-injection test cases.
 - [ ] Add hallucination checks using evidence overlap and LLM-as-judge.
 - [ ] Add dashboards for latency, retrieval score distribution, and citation coverage.
 

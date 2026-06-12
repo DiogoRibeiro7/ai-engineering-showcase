@@ -8,6 +8,8 @@ from typing import Any
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
+from ai_engineering_showcase.guardrails import GuardrailDecision
+
 
 class FeedbackChannel(str, Enum):
     """Supported feedback channels."""
@@ -71,7 +73,12 @@ class Citation(BaseModel):
 
 
 class AgentAnswer(BaseModel):
-    """Final answer returned by the insight agent."""
+    """Final answer returned by the insight agent.
+
+    ``guardrail`` records the deterministic safety decision made for the
+    request, so API and CLI consumers can see whether the question was
+    answered normally or refused (and why).
+    """
 
     question: str
     answer: str
@@ -79,6 +86,7 @@ class AgentAnswer(BaseModel):
     citations: list[Citation]
     route: str
     confidence: float
+    guardrail: GuardrailDecision | None = None
     diagnostics: dict[str, Any] = Field(default_factory=dict)
 
 
