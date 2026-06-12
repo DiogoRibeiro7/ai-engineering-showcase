@@ -198,14 +198,69 @@ Environment variables:
 | `AI_SHOWCASE_RETRIEVER_TYPE` | `dense` | Retrieval strategy: `dense`, `lexical`, or `hybrid`. |
 | `AI_SHOWCASE_DENSE_WEIGHT` | `0.6` | Dense score weight used by the hybrid retriever. |
 | `AI_SHOWCASE_LEXICAL_WEIGHT` | `0.4` | Lexical (BM25) score weight used by the hybrid retriever. |
-| `AI_SHOWCASE_LLM_PROVIDER` | `local` | `local` or `openai`. |
+| `AI_SHOWCASE_LLM_PROVIDER` | `local` | `local`, `openai`, `anthropic`, or `ollama`. |
 | `AI_SHOWCASE_TELEMETRY_ENABLED` | `false` | Enable structured telemetry events. |
 | `AI_SHOWCASE_TELEMETRY_PATH` | `.artifacts/telemetry.jsonl` | JSONL file that telemetry events are appended to. |
 | `AI_SHOWCASE_CONVERSATION_STORE_PATH` | `.artifacts/conversations` | Directory holding one JSON file per chat conversation. |
-| `OPENAI_API_KEY` | empty | Required only when using the optional OpenAI provider. |
-| `OPENAI_MODEL` | `gpt-4o-mini` | Model name for the optional OpenAI provider. |
+| `OPENAI_API_KEY` | empty | Required only when using the OpenAI-compatible provider. |
+| `OPENAI_MODEL` | `gpt-4o-mini` | Model name for the OpenAI-compatible provider. |
+| `OPENAI_BASE_URL` | `https://api.openai.com` | Base URL, so any OpenAI-compatible endpoint works (vLLM, LiteLLM, gateways). |
+| `ANTHROPIC_API_KEY` | empty | Required only when using the Anthropic provider. |
+| `ANTHROPIC_MODEL` | `claude-opus-4-8` | Model alias for the Anthropic provider. |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Base URL of a local Ollama server. |
+| `OLLAMA_MODEL` | `llama3.2` | Model name for the Ollama provider. |
 
 Create a local `.env` from `.env.example` if needed.
+
+### LLM providers
+
+The answer-generation step is provider-agnostic behind the `LLMProvider` protocol in
+`llm.py`. Four providers are available, selected by `AI_SHOWCASE_LLM_PROVIDER`:
+
+- **`local` (default)**: the deterministic evidence-driven provider. No API key, no
+  network access, fully reproducible — this is what CI, tests, and the demo use.
+- **`openai`**: any OpenAI-compatible Chat Completions endpoint over `httpx`
+  (`POST {OPENAI_BASE_URL}/v1/chat/completions` with a bearer token):
+
+  ```bash
+  export AI_SHOWCASE_LLM_PROVIDER=openai
+  export OPENAI_API_KEY=sk-...
+  export OPENAI_MODEL=gpt-4o-mini
+  # Optional: point at a self-hosted OpenAI-compatible server.
+  export OPENAI_BASE_URL=http://localhost:8001
+  poetry run ai-showcase query "Why are enterprise customers unhappy with onboarding?"
+  ```
+
+- **`anthropic`**: the official `anthropic` SDK, shipped as an optional extra so the
+  default install stays lean:
+
+  ```bash
+  poetry install --extras anthropic
+  export AI_SHOWCASE_LLM_PROVIDER=anthropic
+  export ANTHROPIC_API_KEY=sk-ant-...
+  export ANTHROPIC_MODEL=claude-opus-4-8   # bare alias, e.g. claude-sonnet-4-6, claude-haiku-4-5
+  poetry run ai-showcase query "Why are enterprise customers unhappy with onboarding?"
+  ```
+
+- **`ollama`**: a local Ollama server; no API key required:
+
+  ```bash
+  ollama pull llama3.2 && ollama serve
+  export AI_SHOWCASE_LLM_PROVIDER=ollama
+  export OLLAMA_BASE_URL=http://localhost:11434
+  export OLLAMA_MODEL=llama3.2
+  poetry run ai-showcase query "Why are enterprise customers unhappy with onboarding?"
+  ```
+
+Misconfiguration fails fast with actionable errors: a missing API key raises at
+construction time, an unknown provider name lists the valid options, an unreachable
+local server reports the configured base URL, and using the Anthropic provider without
+the extra installed explains how to install it.
+
+Each provider also advertises capability metadata (`provider.capabilities`):
+`supports_streaming`, `supports_tool_calling`, `supports_json_mode`, and an optional
+`max_context_tokens`, so callers can branch on provider features without
+provider-specific code.
 
 ## Telemetry
 

@@ -10,7 +10,13 @@ from ai_engineering_showcase.config import Settings
 from ai_engineering_showcase.embeddings import HashingEmbeddingModel
 from ai_engineering_showcase.ingestion import load_feedback_csv
 from ai_engineering_showcase.lexical_search import BM25Retriever
-from ai_engineering_showcase.llm import DeterministicLLM, LLMProvider, OpenAIChatLLM
+from ai_engineering_showcase.llm import (
+    AnthropicLLM,
+    DeterministicLLM,
+    LLMProvider,
+    OllamaLLM,
+    OpenAIChatLLM,
+)
 from ai_engineering_showcase.memory import JsonConversationStore
 from ai_engineering_showcase.retrieval import HybridRetriever, QueryEngine, Retriever
 from ai_engineering_showcase.schemas import DocumentChunk
@@ -115,12 +121,36 @@ def build_retriever(settings: Settings, vector_store: InMemoryVectorStore) -> Re
 
 
 def build_llm(settings: Settings) -> LLMProvider:
-    """Construct the configured LLM provider."""
+    """Construct the LLM provider selected by ``AI_SHOWCASE_LLM_PROVIDER``.
+
+    ``local`` (the default) needs no API key and stays fully deterministic.
+    ``openai`` targets any OpenAI-compatible endpoint (``OPENAI_BASE_URL``),
+    ``anthropic`` uses the official SDK (optional ``anthropic`` extra), and
+    ``ollama`` talks to a local Ollama server. Missing credentials raise a
+    clear configuration error at construction time.
+    """
+    if settings.llm_provider == "local":
+        return DeterministicLLM()
     if settings.llm_provider == "openai":
         if not settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY is required when AI_SHOWCASE_LLM_PROVIDER=openai")
-        return OpenAIChatLLM(api_key=settings.openai_api_key, model=settings.openai_model)
-    return DeterministicLLM()
+        return OpenAIChatLLM(
+            api_key=settings.openai_api_key,
+            model=settings.openai_model,
+            base_url=settings.openai_base_url,
+        )
+    if settings.llm_provider == "anthropic":
+        if not settings.anthropic_api_key:
+            raise ValueError(
+                "ANTHROPIC_API_KEY is required when AI_SHOWCASE_LLM_PROVIDER=anthropic"
+            )
+        return AnthropicLLM(api_key=settings.anthropic_api_key, model=settings.anthropic_model)
+    if settings.llm_provider == "ollama":
+        return OllamaLLM(base_url=settings.ollama_base_url, model=settings.ollama_model)
+    raise ValueError(
+        f"Unknown LLM provider {settings.llm_provider!r}. "
+        "Valid options: local, openai, anthropic, ollama."
+    )
 
 
 def build_agent(settings: Settings, *, telemetry: Telemetry | None = None) -> FeedbackInsightAgent:

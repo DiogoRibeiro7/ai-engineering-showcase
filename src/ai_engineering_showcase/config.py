@@ -26,9 +26,18 @@ class Settings(BaseSettings):
     retriever_type: RetrieverType = "dense"
     dense_weight: float = Field(default=0.6, ge=0.0)
     lexical_weight: float = Field(default=0.4, ge=0.0)
-    llm_provider: Literal["local", "openai"] = "local"
+    llm_provider: Literal["local", "openai", "anthropic", "ollama"] = "local"
     openai_api_key: str | None = Field(default=None, validation_alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4o-mini", validation_alias="OPENAI_MODEL")
+    openai_base_url: str = Field(
+        default="https://api.openai.com", validation_alias="OPENAI_BASE_URL"
+    )
+    anthropic_api_key: str | None = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
+    anthropic_model: str = Field(default="claude-opus-4-8", validation_alias="ANTHROPIC_MODEL")
+    ollama_base_url: str = Field(
+        default="http://localhost:11434", validation_alias="OLLAMA_BASE_URL"
+    )
+    ollama_model: str = Field(default="llama3.2", validation_alias="OLLAMA_MODEL")
     telemetry_enabled: bool = Field(default=False)
     telemetry_path: Path = Field(default=Path(".artifacts/telemetry.jsonl"))
     conversation_store_path: Path = Field(default=Path(".artifacts/conversations"))
