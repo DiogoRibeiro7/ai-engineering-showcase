@@ -115,6 +115,30 @@ Run the demo:
 poetry run python scripts/run_demo.py
 ```
 
+## Synthetic data generation
+
+The repository is self-contained: in addition to the tracked demo dataset
+(`data/sample_feedback.csv`), it can generate larger synthetic feedback datasets
+with no external data or API. Generation uses a locally seeded `random.Random`
+instance, so the same seed and parameters always produce a byte-identical CSV.
+
+```bash
+poetry run ai-showcase generate-data --rows 1000 --output data/synthetic_feedback.csv --seed 42
+```
+
+The generated CSV uses the same columns the data contract requires
+(`feedback_id`, `customer_segment`, `channel`, `rating`, `text`, `created_at`)
+plus an optional `sentiment` column, with ratings aligned to sentiment. It passes
+validation and feeds straight into indexing:
+
+```bash
+poetry run ai-showcase validate-data data/synthetic_feedback.csv --strict
+poetry run ai-showcase index --input data/synthetic_feedback.csv --index-path .artifacts/vector_store.json
+```
+
+Generated datasets are gitignored (`data/synthetic_feedback.csv`); only the small
+tracked sample stays in the repository.
+
 ## Evaluation
 
 The project ships an offline evaluation harness that measures retrieval quality (precision@k, recall@k, MRR, context hit rate) and answer quality (keyword coverage, groundedness, citation alignment, refusal correctness) over a JSONL dataset:

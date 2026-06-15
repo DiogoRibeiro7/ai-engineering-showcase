@@ -57,3 +57,6 @@ desktop.ini
 .claude/settings.local.json
 ai-engineering-showcase-development-prompts.md
 AGENTS.md
+
+# Generated synthetic datasets (sample_feedback.csv stays tracked)
+data/synthetic_feedback.csv

@@ -33,6 +33,7 @@ from ai_engineering_showcase.prompt_registry import (
 )
 from ai_engineering_showcase.prompts import PROMPT_REGISTRY
 from ai_engineering_showcase.schemas import ChatResponse
+from ai_engineering_showcase.synthetic_data import SyntheticDataConfig, write_feedback_csv
 from ai_engineering_showcase.telemetry import configure_logging
 
 app = typer.Typer(help="AI Engineering Showcase CLI")
@@ -84,6 +85,23 @@ def validate_data(
         raise typer.Exit(code=1) from exc
     typer.echo(report.model_dump_json(indent=2))
     typer.echo(report.summary(), err=True)
+
+
+@app.command("generate-data")
+def generate_data(
+    rows: Annotated[int, typer.Option(help="Number of feedback records to generate.")] = 1000,
+    output: Annotated[Path, typer.Option(help="Destination CSV path.")] = Path(
+        "data/synthetic_feedback.csv"
+    ),
+    seed: Annotated[
+        int, typer.Option(help="Random seed; same seed and options give identical output.")
+    ] = 42,
+) -> None:
+    """Generate a synthetic feedback CSV compatible with the data contract."""
+    configure_logging()
+    config = SyntheticDataConfig(rows=rows, seed=seed)
+    written = write_feedback_csv(config, output)
+    typer.echo(f"Wrote {rows} synthetic feedback rows to {written}")
 
 
 @app.command()
