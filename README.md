@@ -155,6 +155,39 @@ curl -X POST http://127.0.0.1:8000/query \
   -d '{"question":"What should we improve in onboarding?","top_k":4}'
 ```
 
+### Streaming responses (SSE)
+
+`POST /query/stream` returns the same answer as `/query` but as Server-Sent Events
+(`text/event-stream`), with no extra dependencies. Use `curl -N` to disable output
+buffering and watch chunks arrive:
+
+```bash
+curl -N -X POST http://127.0.0.1:8000/query/stream \
+  -H "Content-Type: application/json" \
+  -d '{"question":"What should we improve in onboarding?","top_k":4}'
+```
+
+The stream emits a sequence of `content` events whose JSON `text` fields concatenate
+to the full answer, followed by one final `metadata` event with the citations, cited
+`sources`, per-citation `retrieval_scores`, the `provider` name, and `latency_ms`:
+
+```text
+event: content
+data: {"text": "The strongest signal is around onboarding [1]. "}
+
+event: content
+data: {"text": "The retrieved feedback points to repeated friction in ..."}
+
+event: metadata
+data: {"provider": "DeterministicLLM", "latency_ms": 12.3, "route": "onboarding",
+       "confidence": 0.649, "sources": ["fb-001", "fb-007", "fb-009"],
+       "retrieval_scores": [0.532, 0.502, 0.435], "citations": [...], ...}
+```
+
+Providers without true token streaming (including the deterministic local provider,
+so this works without any API key) are supported transparently: the final answer is
+replayed as small whitespace-preserving chunks.
+
 Run tests:
 
 ```bash

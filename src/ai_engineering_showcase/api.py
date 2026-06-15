@@ -2,19 +2,80 @@
 
 from __future__ import annotations
 
+import json
+import re
+import time
+from collections.abc import Iterator
+from typing import Any
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 
 from ai_engineering_showcase.config import Settings
 from ai_engineering_showcase.factory import build_agent, build_conversation_store, build_index
 from ai_engineering_showcase.memory import ConversationMemory
 from ai_engineering_showcase.schemas import (
+    AgentAnswer,
     ChatRequest,
     ChatResponse,
     IndexRequest,
     QueryRequest,
     QueryResponse,
+    StreamMetadata,
 )
 from ai_engineering_showcase.telemetry import configure_logging, log_event
+
+
+def _sse_event(event: str, data: dict[str, Any]) -> str:
+    """Format one Server-Sent Event with a JSON payload.
+
+    The payload is JSON-encoded onto a single ``data:`` line, so answer text
+    containing newlines never breaks the SSE framing.
+    """
+    return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+def _split_for_streaming(text: str, *, words_per_chunk: int = 8) -> list[str]:
+    """Split text into whitespace-preserving chunks for simulated streaming.
+
+    Splitting keeps every separator, so concatenating the chunks reproduces
+    the original text byte-for-byte. Used when the configured provider does
+    not expose true token streaming (for example the deterministic local
+    provider): the final answer is replayed as small chunks instead.
+    """
+    parts = [part for part in re.split(r"(\s+)", text) if part]
+    chunks: list[str] = []
+    current: list[str] = []
+    words = 0
+    for part in parts:
+        current.append(part)
+        if not part.isspace():
+            words += 1
+            if words >= words_per_chunk:
+                chunks.append("".join(current))
+                current = []
+                words = 0
+    if current:
+        chunks.append("".join(current))
+    return chunks
+
+
+def _build_stream_metadata(
+    result: AgentAnswer, *, provider: str, latency_ms: float
+) -> dict[str, Any]:
+    """Build the JSON payload of the final ``metadata`` SSE event."""
+    metadata = StreamMetadata(
+        provider=provider,
+        latency_ms=latency_ms,
+        route=result.route,
+        confidence=result.confidence,
+        sources=[citation.document_id for citation in result.citations],
+        retrieval_scores=[citation.score for citation in result.citations],
+        citations=result.citations,
+        recommended_actions=result.recommended_actions,
+        guardrail=result.guardrail,
+    )
+    return metadata.model_dump(mode="json")
 
 
 def create_app() -> FastAPI:
@@ -44,6 +105,39 @@ def create_app() -> FastAPI:
             log_event("query_failed", {"error": str(exc)})
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return QueryResponse(result=result)
+
+    @app.post("/query/stream")
+    def query_stream(request: QueryRequest) -> StreamingResponse:
+        """Answer a question as a Server-Sent Events stream.
+
+        Emits ``content`` events whose JSON ``text`` fields concatenate to the
+        same answer `/query` would return, followed by one final ``metadata``
+        event carrying citations, sources, retrieval scores, the provider
+        name, and the answer latency in milliseconds.
+
+        Providers without true token streaming (such as the deterministic
+        local provider) are supported by replaying the final answer in small
+        chunks, so the endpoint works without external LLM APIs.
+        """
+        started = time.perf_counter()
+        try:
+            result = agent.answer(request.question, top_k=request.top_k)
+        except Exception as exc:  # noqa: BLE001 - convert to API-safe response.
+            log_event("query_stream_failed", {"error": str(exc)})
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        latency_ms = round((time.perf_counter() - started) * 1000, 3)
+
+        def event_stream() -> Iterator[str]:
+            for chunk in _split_for_streaming(result.answer):
+                yield _sse_event("content", {"text": chunk})
+            yield _sse_event(
+                "metadata",
+                _build_stream_metadata(
+                    result, provider=type(agent.llm).__name__, latency_ms=latency_ms
+                ),
+            )
+
+        return StreamingResponse(event_stream(), media_type="text/event-stream")
 
     @app.post("/chat", response_model=ChatResponse)
     def chat(request: ChatRequest) -> ChatResponse:

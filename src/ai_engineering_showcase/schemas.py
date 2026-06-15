@@ -121,6 +121,28 @@ class QueryResponse(BaseModel):
     result: AgentAnswer
 
 
+class StreamMetadata(BaseModel):
+    """Payload of the final ``metadata`` SSE event of the `/query/stream` endpoint.
+
+    Sent after all ``content`` chunks so streaming clients can render the
+    answer incrementally and then attach evidence, scores, and timing:
+    ``provider`` names the LLM provider class, ``latency_ms`` measures the
+    full answer-generation time, ``sources`` lists the cited document IDs in
+    citation order, and ``retrieval_scores`` carries the per-citation
+    retrieval scores.
+    """
+
+    provider: str
+    latency_ms: float
+    route: str
+    confidence: float
+    sources: list[str]
+    retrieval_scores: list[float]
+    citations: list[Citation]
+    recommended_actions: list[str] = Field(default_factory=list)
+    guardrail: GuardrailDecision | None = None
+
+
 class ChatRequest(BaseModel):
     """API request for the `/chat` endpoint.
 
