@@ -1,0 +1,16 @@
+{
+  "name": "ai-engineering-showcase-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Minimal TypeScript + Vite demo UI for the AI Engineering Showcase API.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host --port 4173"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}

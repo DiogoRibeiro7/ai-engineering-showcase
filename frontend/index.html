@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Engineering Showcase — Demo</title>
+  </head>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <h1>Customer Feedback Intelligence</h1>
+        <p class="app__subtitle">
+          Ask a question about the indexed customer feedback. Answers are grounded
+          in retrieved evidence with citations.
+        </p>
+      </header>
+
+      <form id="query-form" class="query">
+        <label class="query__label" for="question">Question</label>
+        <textarea
+          id="question"
+          class="query__input"
+          rows="3"
+          placeholder="Why are enterprise customers unhappy with onboarding?"
+          required
+        ></textarea>
+
+        <div class="query__controls">
+          <label class="toggle">
+            <input type="checkbox" id="stream-toggle" />
+            <span>Stream tokens (SSE)</span>
+          </label>
+          <button type="submit" id="submit-btn" class="query__submit">Ask</button>
+        </div>
+      </form>
+
+      <section id="status" class="status" hidden></section>
+
+      <section id="answer-panel" class="panel" hidden>
+        <h2 class="panel__title">Answer</h2>
+        <div id="answer" class="panel__body answer"></div>
+        <div id="actions" class="actions"></div>
+      </section>
+
+      <section id="meta-panel" class="panel" hidden>
+        <h2 class="panel__title">Metadata</h2>
+        <dl id="meta" class="meta"></dl>
+      </section>
+
+      <section id="sources-panel" class="panel" hidden>
+        <h2 class="panel__title">Retrieved sources</h2>
+        <ol id="sources" class="sources"></ol>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

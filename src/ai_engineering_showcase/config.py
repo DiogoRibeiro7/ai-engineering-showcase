@@ -46,6 +46,24 @@ class Settings(BaseSettings):
     telemetry_path: Path = Field(default=Path(".artifacts/telemetry.jsonl"))
     conversation_store_path: Path = Field(default=Path(".artifacts/conversations"))
     job_store_path: Path = Field(default=Path(".artifacts/jobs"))
+    cors_allow_origins: str = Field(
+        default=(
+            "http://localhost:5173,http://localhost:4173,"
+            "http://127.0.0.1:5173,http://127.0.0.1:4173"
+        )
+    )
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Parse the comma-separated CORS origins into a list.
+
+        A single ``*`` allows any origin (convenient for local demos); an empty
+        value disables cross-origin requests entirely.
+        """
+        value = self.cors_allow_origins.strip()
+        if not value:
+            return []
+        return [origin.strip() for origin in value.split(",") if origin.strip()]
 
     def ensure_artifact_dir(self) -> None:
         """Create the parent folder used by local artifacts."""

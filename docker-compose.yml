@@ -7,8 +7,23 @@ services:
       AI_SHOWCASE_DATA_PATH: data/sample_feedback.csv
       AI_SHOWCASE_INDEX_PATH: .artifacts/vector_store.json
       AI_SHOWCASE_LLM_PROVIDER: local
+      # Allow the frontend container/dev server origins to call the API.
+      AI_SHOWCASE_CORS_ALLOW_ORIGINS: "http://localhost:4173,http://localhost:5173,http://127.0.0.1:4173,http://127.0.0.1:5173"
     volumes:
       - ./.artifacts:/app/.artifacts
+
+  # Minimal TypeScript + Vite demo frontend served by `vite preview`.
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked into the static bundle at build time; points the browser at the
+        # backend published on the host (the API runs on the host network port).
+        VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "4173:4173"
+    depends_on:
+      - ai-showcase
 
   # Optional local vector database. The app defaults to the JSON store and only
   # uses Qdrant when AI_SHOWCASE_VECTOR_STORE=qdrant. Start it with:

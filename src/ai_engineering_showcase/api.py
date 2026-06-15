@@ -9,6 +9,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from ai_engineering_showcase.config import Settings
@@ -98,6 +99,17 @@ def create_app() -> FastAPI:
         version="0.1.0",
         description="Evidence-grounded customer feedback intelligence agent.",
     )
+
+    cors_origins = settings.cors_origins
+    if cors_origins:
+        allow_all = cors_origins == ["*"]
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=not allow_all,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     @app.get("/health")
     def health() -> dict[str, str]:

@@ -33,6 +33,16 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> TestClient:
     return TestClient(create_app())
 
 
+def test_cors_headers_are_sent_for_allowed_origin(client: TestClient) -> None:
+    response = client.post(
+        "/query",
+        json={"question": "Why are enterprise customers unhappy with onboarding?", "top_k": 3},
+        headers={"Origin": "http://localhost:5173"},
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
 def test_query_response_exposes_tool_metadata(client: TestClient) -> None:
     response = client.post(
         "/query",

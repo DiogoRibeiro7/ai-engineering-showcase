@@ -296,6 +296,33 @@ stores. When the collection is empty, the configured dataset is embedded and
 upserted automatically on first use. Using the Qdrant store without the extra
 installed fails fast with an actionable message explaining how to install it.
 
+## Frontend demo
+
+A minimal, professional **TypeScript + Vite** demo UI lives in
+[`frontend/`](frontend/README.md). It calls the FastAPI backend and renders the
+grounded answer, the retrieved sources/citations, latency and provider
+metadata, and supports an optional streaming mode (`POST /query/stream`).
+
+Run it locally against a running backend:
+
+```bash
+cd frontend
+npm install
+npm run dev   # http://localhost:5173
+```
+
+Or bring up backend + frontend together with Docker Compose:
+
+```bash
+docker compose up --build
+# Backend API:   http://localhost:8000
+# Frontend demo: http://localhost:4173
+```
+
+The backend enables CORS for the Vite dev (`5173`) and preview (`4173`) origins;
+the allowed origins are configurable via `AI_SHOWCASE_CORS_ALLOW_ORIGINS`. See
+[`frontend/README.md`](frontend/README.md) for full instructions.
+
 ## Docker
 
 ```bash
