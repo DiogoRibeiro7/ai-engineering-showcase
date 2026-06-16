@@ -1,5 +1,5 @@
 # Multi-stage build: compile the Vite bundle, then serve it with `vite preview`.
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # Runtime stage: a lean image that serves the built assets.
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 
 WORKDIR /app
 
