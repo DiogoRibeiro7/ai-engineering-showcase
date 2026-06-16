@@ -330,6 +330,16 @@ docker build -t ai-engineering-showcase .
 docker run --rm -p 8000:8000 ai-engineering-showcase
 ```
 
+## Deployment
+
+The API exposes `GET /health` (liveness) and `GET /ready` (readiness) probes,
+and the [`deploy/`](deploy) folder ships realistic deployment manifests:
+a production-like Docker Compose file (gunicorn + uvicorn workers), an AWS ECS
+Fargate task-definition template, and a Fly.io config. See
+[docs/deployment.md](docs/deployment.md) for the local-dev, Docker Compose,
+ECS Fargate, and Fly.io paths, plus how configuration and secrets are provided.
+The templates use placeholders only — no secrets are committed.
+
 ## Configuration
 
 The default mode is fully local and deterministic. It does not require an API key.

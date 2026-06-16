@@ -113,8 +113,25 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     def health() -> dict[str, str]:
-        """Return service health."""
+        """Return service liveness.
+
+        Liveness probe: confirms the process is up and able to serve
+        requests. It performs no dependency checks, so an orchestrator can
+        use it to decide whether to restart the container.
+        """
         return {"status": "ok"}
+
+    @app.get("/ready")
+    def ready() -> dict[str, str]:
+        """Return service readiness.
+
+        Readiness probe: the agent, conversation store, and job store were
+        all constructed during application startup (above). Reaching this
+        handler proves the app object is fully built and able to serve
+        traffic, so it reports ``ready`` without faking external dependency
+        checks.
+        """
+        return {"status": "ready"}
 
     @app.post("/query", response_model=QueryResponse)
     def query(request: QueryRequest) -> QueryResponse:

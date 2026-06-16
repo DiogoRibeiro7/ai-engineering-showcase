@@ -1,0 +1,61 @@
+{
+  "family": "ai-engineering-showcase",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ai-showcase-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ai-showcase-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "api",
+      "image": "<IMAGE_URI>",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "AI_SHOWCASE_DATA_PATH", "value": "data/sample_feedback.csv" },
+        { "name": "AI_SHOWCASE_INDEX_PATH", "value": "/app/.artifacts/vector_store.json" },
+        { "name": "AI_SHOWCASE_LLM_PROVIDER", "value": "local" },
+        { "name": "AI_SHOWCASE_RETRIEVER_TYPE", "value": "dense" },
+        { "name": "AI_SHOWCASE_CORS_ALLOW_ORIGINS", "value": "https://<YOUR_FRONTEND_DOMAIN>" }
+      ],
+      "secrets": [
+        {
+          "name": "OPENAI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<AWS_ACCOUNT_ID>:secret:ai-showcase/openai-api-key"
+        },
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<AWS_ACCOUNT_ID>:secret:ai-showcase/anthropic-api-key"
+        }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)\""
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 20
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ai-engineering-showcase",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "api"
+        }
+      }
+    }
+  ]
+}

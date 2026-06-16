@@ -32,6 +32,9 @@ htmlcov/
 .env
 .env.*
 !.env.example
+# Deployment env files must never be committed (placeholders only in deploy/).
+deploy/.env
+deploy/.env.*
 
 # Project artifacts
 .artifacts/

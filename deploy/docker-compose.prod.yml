@@ -1,0 +1,56 @@
+# Production-like Docker Compose for the AI Engineering Showcase API.
+#
+# Unlike the root docker-compose.yml (which builds locally and wires up the
+# Vite frontend for the demo), this file runs the already-built backend image
+# under a gunicorn process manager with uvicorn workers, reads configuration
+# from an env file, restarts on failure, and exposes a container healthcheck.
+#
+# Usage:
+#   docker build -t ai-engineering-showcase:latest .
+#   cp .env.example deploy/.env.prod   # then edit; do NOT commit real secrets
+#   docker compose -f deploy/docker-compose.prod.yml up -d
+#
+# The image already contains uvicorn[standard]; gunicorn is installed at start
+# via pip so the base image does not need to change. All AI_SHOWCASE_* settings
+# come from the env file (see .env.example) — no secrets are baked into the image.
+
+services:
+  api:
+    image: ai-engineering-showcase:latest
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env.prod
+    environment:
+      # Sensible production defaults; override in .env.prod as needed.
+      AI_SHOWCASE_DATA_PATH: data/sample_feedback.csv
+      AI_SHOWCASE_INDEX_PATH: /app/.artifacts/vector_store.json
+      AI_SHOWCASE_LLM_PROVIDER: local
+    volumes:
+      # Persist the JSON vector index and other local artifacts across restarts.
+      - api_artifacts:/app/.artifacts
+    command:
+      - sh
+      - -c
+      - >
+        pip install --no-cache-dir 'gunicorn>=22,<24' &&
+        gunicorn 'ai_engineering_showcase.api:create_app()'
+        --worker-class uvicorn.workers.UvicornWorker
+        --workers ${WEB_CONCURRENCY:-2}
+        --bind 0.0.0.0:8000
+        --timeout 60
+    healthcheck:
+      # Hit the liveness endpoint; python is always present in the image.
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  api_artifacts:
