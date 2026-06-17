@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.schemas import DocumentChunk
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.schemas import DocumentChunk
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 
 def test_hashing_embeddings_are_deterministic() -> None:

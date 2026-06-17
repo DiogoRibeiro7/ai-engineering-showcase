@@ -7,7 +7,7 @@ built from the actually retrieved chunks.
 
 from __future__ import annotations
 
-from ai_engineering_showcase.schemas import Citation, SearchResult
+from feedback_intelligence_agent.schemas import Citation, SearchResult
 
 
 def build_citations(results: list[SearchResult], *, max_quote_chars: int = 180) -> list[Citation]:

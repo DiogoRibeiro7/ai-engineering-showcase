@@ -18,7 +18,7 @@ typecheck:
 	poetry run mypy src
 
 coverage:
-	poetry run pytest --cov=ai_engineering_showcase --cov-report=term-missing --cov-fail-under=$(COVERAGE_THRESHOLD)
+	poetry run pytest --cov=feedback_intelligence_agent --cov-report=term-missing --cov-fail-under=$(COVERAGE_THRESHOLD)
 
 build:
 	poetry build
@@ -31,17 +31,17 @@ demo:
 	poetry run python scripts/run_demo.py
 
 api:
-	poetry run uvicorn ai_engineering_showcase.api:create_app --factory --reload
+	poetry run uvicorn feedback_intelligence_agent.api:create_app --factory --reload
 
 docker-build:
-	docker build -t ai-engineering-showcase .
+	docker build -t feedback-intelligence-agent .
 
 docker-run:
-	docker run --rm -p 8000:8000 ai-engineering-showcase
+	docker run --rm -p 8000:8000 feedback-intelligence-agent
 
 # Production-like Docker Compose (built image, gunicorn workers, healthcheck).
 # Requires a deploy/.env.prod file (copy from .env.example) and the 'latest'
-# image tag, e.g. `make docker-build && docker tag ai-engineering-showcase ai-engineering-showcase:latest`.
+# image tag, e.g. `make docker-build && docker tag feedback-intelligence-agent feedback-intelligence-agent:latest`.
 compose-prod-up:
 	docker compose -f deploy/docker-compose.prod.yml up -d
 

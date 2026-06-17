@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from ai_engineering_showcase.chunking import chunk_text, feedback_to_chunks
-from ai_engineering_showcase.schemas import FeedbackRecord
+from feedback_intelligence_agent.chunking import chunk_text, feedback_to_chunks
+from feedback_intelligence_agent.schemas import FeedbackRecord
 
 
 def test_chunk_text_returns_single_chunk_for_short_text() -> None:

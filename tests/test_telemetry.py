@@ -5,22 +5,22 @@ from pathlib import Path
 
 import pytest
 
-from ai_engineering_showcase.agent import FeedbackInsightAgent
-from ai_engineering_showcase.config import Settings
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.evaluation import evaluate_system
-from ai_engineering_showcase.factory import build_telemetry
-from ai_engineering_showcase.ingestion import load_feedback_csv
-from ai_engineering_showcase.llm import DeterministicLLM
-from ai_engineering_showcase.retrieval import QueryEngine
-from ai_engineering_showcase.schemas import DocumentChunk, EvaluationCase
-from ai_engineering_showcase.telemetry import (
+from feedback_intelligence_agent.agent import FeedbackInsightAgent
+from feedback_intelligence_agent.config import Settings
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.evaluation import evaluate_system
+from feedback_intelligence_agent.factory import build_telemetry
+from feedback_intelligence_agent.ingestion import load_feedback_csv
+from feedback_intelligence_agent.llm import DeterministicLLM
+from feedback_intelligence_agent.retrieval import QueryEngine
+from feedback_intelligence_agent.schemas import DocumentChunk, EvaluationCase
+from feedback_intelligence_agent.telemetry import (
     InMemoryTelemetrySink,
     JsonlTelemetrySink,
     Telemetry,
     TelemetryEvent,
 )
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 SAMPLE_CSV = Path("data/sample_feedback.csv")
 

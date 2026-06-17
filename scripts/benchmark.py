@@ -1,7 +1,7 @@
 """Run the RAG latency benchmark from the command line.
 
-Thin wrapper over :mod:`ai_engineering_showcase.benchmarking`. The CLI command
-``ai-showcase benchmark`` offers the same functionality with more options; this
+Thin wrapper over :mod:`feedback_intelligence_agent.benchmarking`. The CLI command
+``feedback-agent benchmark`` offers the same functionality with more options; this
 script exists for a quick one-command run against the sample dataset.
 """
 
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ai_engineering_showcase.benchmarking import run_benchmark, write_benchmark_outputs
+from feedback_intelligence_agent.benchmarking import run_benchmark, write_benchmark_outputs
 
 
 def main() -> None:

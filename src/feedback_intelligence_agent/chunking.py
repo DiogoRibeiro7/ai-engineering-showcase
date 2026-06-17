@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from ai_engineering_showcase.schemas import DocumentChunk, FeedbackRecord
+from feedback_intelligence_agent.schemas import DocumentChunk, FeedbackRecord
 
 
 def chunk_text(text: str, *, max_words: int = 80, overlap_words: int = 16) -> list[str]:

@@ -7,20 +7,20 @@ import pytest
 from fastapi.testclient import TestClient
 from typer.testing import CliRunner
 
-from ai_engineering_showcase.agent import FeedbackInsightAgent
-from ai_engineering_showcase.api import create_app
-from ai_engineering_showcase.citations import (
+from feedback_intelligence_agent.agent import FeedbackInsightAgent
+from feedback_intelligence_agent.api import create_app
+from feedback_intelligence_agent.citations import (
     build_citations,
     citation_marker,
     render_citations,
     summarize_evidence,
 )
-from ai_engineering_showcase.cli import app
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.llm import DeterministicLLM
-from ai_engineering_showcase.retrieval import QueryEngine
-from ai_engineering_showcase.schemas import DocumentChunk, SearchResult
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.cli import app
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.llm import DeterministicLLM
+from feedback_intelligence_agent.retrieval import QueryEngine
+from feedback_intelligence_agent.schemas import DocumentChunk, SearchResult
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 runner = CliRunner()
 

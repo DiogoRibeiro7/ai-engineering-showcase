@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ai_engineering_showcase.memory import (
+from feedback_intelligence_agent.memory import (
     ConversationMemory,
     ConversationTurn,
     DeterministicQueryRewriter,
@@ -14,7 +14,7 @@ from ai_engineering_showcase.memory import (
     extract_entities,
     new_conversation_id,
 )
-from ai_engineering_showcase.schemas import SearchResult
+from feedback_intelligence_agent.schemas import SearchResult
 
 
 def make_turn(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from ai_engineering_showcase.prompt_registry import (
+from feedback_intelligence_agent.prompt_registry import (
     LATEST_VERSION,
     PromptNotFoundError,
     PromptRegistry,
@@ -10,7 +10,7 @@ from ai_engineering_showcase.prompt_registry import (
     PromptVariableError,
     template_placeholders,
 )
-from ai_engineering_showcase.prompts import PROMPT_REGISTRY
+from feedback_intelligence_agent.prompts import PROMPT_REGISTRY
 
 
 def build_registry() -> PromptRegistry:

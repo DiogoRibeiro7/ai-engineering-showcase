@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ai_engineering_showcase.prompts import PROMPT_REGISTRY, build_grounded_prompt
-from ai_engineering_showcase.schemas import DocumentChunk, SearchResult
+from feedback_intelligence_agent.prompts import PROMPT_REGISTRY, build_grounded_prompt
+from feedback_intelligence_agent.schemas import DocumentChunk, SearchResult
 
 SNAPSHOT_DIR = Path(__file__).parent / "snapshots"
 

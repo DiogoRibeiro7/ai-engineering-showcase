@@ -8,10 +8,10 @@ import pytest
 from pydantic import ValidationError
 from typer.testing import CliRunner
 
-from ai_engineering_showcase import __version__
-from ai_engineering_showcase.cli import app
-from ai_engineering_showcase.evaluation import AnswerMetrics, CaseResult, RetrievalMetrics
-from ai_engineering_showcase.experiments import (
+from feedback_intelligence_agent import __version__
+from feedback_intelligence_agent.cli import app
+from feedback_intelligence_agent.evaluation import AnswerMetrics, CaseResult, RetrievalMetrics
+from feedback_intelligence_agent.experiments import (
     AggregateMetrics,
     ExperimentConfig,
     ExperimentResult,

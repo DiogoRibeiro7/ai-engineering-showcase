@@ -24,4 +24,4 @@ RUN poetry install --only main --no-root \
 
 EXPOSE 8000
 
-CMD ["uvicorn", "ai_engineering_showcase.api:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "feedback_intelligence_agent.api:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

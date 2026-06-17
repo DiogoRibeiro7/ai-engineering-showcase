@@ -10,7 +10,7 @@ The entire system runs **locally and deterministically by default** — no API
 keys, no managed services, no network access. Paid LLMs and a managed vector
 database are optional, opt-in extensions behind stable interfaces.
 
-- Source: [`src/ai_engineering_showcase/`](../src/ai_engineering_showcase/)
+- Source: [`src/feedback_intelligence_agent/`](../src/feedback_intelligence_agent/)
 - Companion docs: [architecture.md](architecture.md) ·
   [evaluation.md](evaluation.md) · [prompts.md](prompts.md) ·
   [deployment.md](deployment.md)
@@ -45,9 +45,9 @@ the same boundaries a real system would, so each layer can be swapped without a
 rewrite.
 
 The design priority is **determinism**. The default LLM
-([`DeterministicLLM` in llm.py](../src/ai_engineering_showcase/llm.py)) and the
+([`DeterministicLLM` in llm.py](../src/feedback_intelligence_agent/llm.py)) and the
 hashing embedding model
-([embeddings.py](../src/ai_engineering_showcase/embeddings.py)) produce
+([embeddings.py](../src/feedback_intelligence_agent/embeddings.py)) produce
 byte-identical output for the same inputs. That makes the evaluation report a
 trustworthy CI regression gate, lets prompts be pinned with golden snapshot
 tests, and means a reviewer can clone the repo and reproduce every number
@@ -110,8 +110,8 @@ flowchart TB
 
 Component responsibilities are documented in
 [architecture.md](architecture.md); the wiring is centralized in
-[factory.py](../src/ai_engineering_showcase/factory.py), which reads
-configuration from [config.py](../src/ai_engineering_showcase/config.py) and
+[factory.py](../src/feedback_intelligence_agent/factory.py), which reads
+configuration from [config.py](../src/feedback_intelligence_agent/config.py) and
 fails fast with actionable errors on misconfiguration.
 
 ## Key AI engineering decisions
@@ -120,18 +120,18 @@ fails fast with actionable errors on misconfiguration.
    embeddings make the whole pipeline reproducible. This is what unlocks
    snapshot-tested prompts and an evaluation report usable as a CI gate.
 2. **Provider behind a protocol.** Answer generation is gated by the
-   `LLMProvider` protocol in [llm.py](../src/ai_engineering_showcase/llm.py),
+   `LLMProvider` protocol in [llm.py](../src/feedback_intelligence_agent/llm.py),
    with four implementations (`local`, `openai`-compatible, `anthropic`,
    `ollama`) and per-provider capability metadata (`supports_streaming`,
    `supports_tool_calling`, `supports_json_mode`, `max_context_tokens`).
    Optional SDKs are extras so the default install stays lean.
 3. **Pluggable vector store.** A common `VectorStore` interface
-   ([vector_store.py](../src/ai_engineering_showcase/vector_store.py)) backs
+   ([vector_store.py](../src/feedback_intelligence_agent/vector_store.py)) backs
    both the default in-memory JSON store and an optional Qdrant backend, with no
    change to retrieval code.
 4. **Prompts as versioned assets.** Prompts live in a versioned registry
-   ([prompt_registry.py](../src/ai_engineering_showcase/prompt_registry.py),
-   [prompts.py](../src/ai_engineering_showcase/prompts.py)) with declared
+   ([prompt_registry.py](../src/feedback_intelligence_agent/prompt_registry.py),
+   [prompts.py](../src/feedback_intelligence_agent/prompts.py)) with declared
    variables, changelog notes, and byte-level golden snapshot tests — see
    [prompts.md](prompts.md).
 5. **Determinism over cleverness in routing and tools.** Query routing, tool
@@ -140,27 +140,27 @@ fails fast with actionable errors on misconfiguration.
    call.
 6. **Safety as a deterministic, auditable layer.** Guardrails are documented
    regular expressions, not a model
-   ([guardrails.py](../src/ai_engineering_showcase/guardrails.py)).
+   ([guardrails.py](../src/feedback_intelligence_agent/guardrails.py)).
 
 ## RAG pipeline
 
 Ingestion validates each row against a data contract
-([data_contracts.py](../src/ai_engineering_showcase/data_contracts.py)) — the
+([data_contracts.py](../src/feedback_intelligence_agent/data_contracts.py)) — the
 contract requires `feedback_id`, `customer_segment`, `channel`, `rating`,
 `text`, and `created_at` and reports missing columns, empty text, duplicate IDs,
 and invalid timestamps. Valid rows are chunked into overlapping word windows
-([chunking.py](../src/ai_engineering_showcase/chunking.py)), embedded with
+([chunking.py](../src/feedback_intelligence_agent/chunking.py)), embedded with
 deterministic feature hashing
-([embeddings.py](../src/ai_engineering_showcase/embeddings.py)), and persisted.
+([embeddings.py](../src/feedback_intelligence_agent/embeddings.py)), and persisted.
 
 Retrieval is exposed behind a single `Retriever` protocol
-([retrieval.py](../src/ai_engineering_showcase/retrieval.py)) with three
+([retrieval.py](../src/feedback_intelligence_agent/retrieval.py)) with three
 interchangeable strategies:
 
 - **dense** (default): cosine similarity over hashing embeddings — robust to
   paraphrase.
 - **lexical**: a local BM25 index
-  ([lexical_search.py](../src/ai_engineering_showcase/lexical_search.py)) — good
+  ([lexical_search.py](../src/feedback_intelligence_agent/lexical_search.py)) — good
   for exact domain terms (product names, integrations, error codes).
 - **hybrid**: queries both, min-max normalizes each score list, de-duplicates
   by chunk ID, and combines as `dense_weight * dense + lexical_weight * lexical`
@@ -169,13 +169,13 @@ interchangeable strategies:
 After first-stage retrieval the agent applies a lightweight, domain-aware
 rerank that blends the retriever score with query-term overlap, route-keyword
 hits, segment match, and a low-rating signal for risk questions (see
-`_combined_score` in [agent.py](../src/ai_engineering_showcase/agent.py)). The
+`_combined_score` in [agent.py](../src/feedback_intelligence_agent/agent.py)). The
 grounded prompt is then built with numbered `citation: [n]` context blocks, so
 the answer can reference evidence by index.
 
 ## Agent design
 
-The agent ([agent.py](../src/ai_engineering_showcase/agent.py)) orchestrates the
+The agent ([agent.py](../src/feedback_intelligence_agent/agent.py)) orchestrates the
 full per-question flow. It is single-turn by default and gains persistent
 multi-turn memory when conversation history is supplied.
 
@@ -200,18 +200,18 @@ Notable elements:
   retrieval; `check_context` scans retrieved chunks and drops ones carrying
   instruction-override content (indirect prompt injection planted in feedback)
   so they are never cited or summarized.
-- **Deterministic tool framework.** [tools.py](../src/ai_engineering_showcase/tools.py)
+- **Deterministic tool framework.** [tools.py](../src/feedback_intelligence_agent/tools.py)
   ships three local tools — `sentiment_summary`, `issue_cluster`, and
   `ticket_draft` — each with a typed Pydantic input/output schema. A keyword
   router selects at most one tool; unknown explicit tool requests are refused
   gracefully and the run continues as plain RAG. Tool failures degrade to an
   `error` record rather than failing the run.
 - **Citations the agent cannot fabricate.** Citations are built only from
-  actually retrieved chunks ([citations.py](../src/ai_engineering_showcase/citations.py)),
+  actually retrieved chunks ([citations.py](../src/feedback_intelligence_agent/citations.py)),
   each carrying a stable id, document/chunk id, source channel, evidence quote,
   and retrieval score.
 - **Conversation memory.** Multi-turn chat persists turns to disk
-  ([memory.py](../src/ai_engineering_showcase/memory.py)). Follow-ups are
+  ([memory.py](../src/feedback_intelligence_agent/memory.py)). Follow-ups are
   rewritten into standalone questions by a deterministic local rewriter (an
   optional `LLMQueryRewriter` can delegate to a provider); only the rewritten
   question reaches retrieval, and the rewrite is reported transparently in
@@ -221,7 +221,7 @@ Notable elements:
 
 RAG fails in two distinct places: retrieval can miss the evidence, or generation
 can ignore the evidence it was given. The harness
-([evaluation.py](../src/ai_engineering_showcase/evaluation.py)) therefore scores
+([evaluation.py](../src/feedback_intelligence_agent/evaluation.py)) therefore scores
 each stage separately over a JSONL dataset and emits a typed `EvaluationReport`:
 
 - **Retrieval:** `precision_at_k`, `recall_at_k`, `mean_reciprocal_rank`,
@@ -233,7 +233,7 @@ each stage separately over a JSONL dataset and emits a typed `EvaluationReport`:
 Because the local provider is deterministic, two runs over the same index and
 dataset produce identical reports, so the report works as a **CI regression
 gate** and for A/B comparison of configurations. The
-[experiment runner](../src/ai_engineering_showcase/experiments.py) builds a fresh
+[experiment runner](../src/feedback_intelligence_agent/experiments.py) builds a fresh
 index from a YAML-described configuration and writes reproducible
 `results.json` / `metrics.json` plus environment-only `run_metadata.json`,
 making it easy to diff, for example, dense vs. hybrid retrieval. Full metric
@@ -241,7 +241,7 @@ rationale is in [evaluation.md](evaluation.md).
 
 ## Observability strategy
 
-Telemetry ([telemetry.py](../src/ai_engineering_showcase/telemetry.py)) emits
+Telemetry ([telemetry.py](../src/feedback_intelligence_agent/telemetry.py)) emits
 OpenTelemetry-style structured events around ingestion, retrieval, LLM calls,
 tool runs, agent runs, and evaluation. Each event carries a name, an ISO-8601
 UTC timestamp, a `correlation_id` shared across one logical operation, a
@@ -252,18 +252,18 @@ Telemetry is **disabled by default and side-effect-free**; sinks are injected
 explicitly. Enabling it appends one JSON object per event to a JSONL trace file.
 Blocked runs are recorded with `guardrail_allowed: false`, so refusals are
 observable, not silent. Separately, the
-[benchmark harness](../src/ai_engineering_showcase/benchmarking.py) measures
+[benchmark harness](../src/feedback_intelligence_agent/benchmarking.py) measures
 per-phase latency (index build, query embedding, retrieval, full agent response)
 with robust statistics (mean, median, p95, min, max).
 
 ## Deployment path
 
-The API ([api.py](../src/ai_engineering_showcase/api.py)) exposes `POST /query`,
+The API ([api.py](../src/feedback_intelligence_agent/api.py)) exposes `POST /query`,
 streaming `POST /query/stream` (SSE, no extra dependencies), `POST /chat` plus
 conversation retrieval, synchronous `POST /index`, asynchronous ingestion jobs
 (`POST /ingestion/jobs` + polling), and `GET /health` (liveness) and
 `GET /ready` (readiness) probes. Asynchronous ingestion uses FastAPI
-`BackgroundTasks` ([jobs.py](../src/ai_engineering_showcase/jobs.py)) — no
+`BackgroundTasks` ([jobs.py](../src/feedback_intelligence_agent/jobs.py)) — no
 Celery/Redis — and never leaks stack traces or paths to clients on failure.
 
 ```mermaid

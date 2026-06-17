@@ -36,7 +36,7 @@ cp .env.example .env
 ## Run locally (dev)
 
 Requires Node.js 20+ and the backend running on `http://localhost:8000`
-(`poetry run uvicorn ai_engineering_showcase.api:create_app --factory --reload`).
+(`poetry run uvicorn feedback_intelligence_agent.api:create_app --factory --reload`).
 
 ```bash
 cd frontend

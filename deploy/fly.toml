@@ -11,7 +11,7 @@
 #   fly launch --no-deploy --copy-config --name <APP_NAME>   # first time
 #   fly deploy --config deploy/fly.toml --dockerfile Dockerfile
 
-app = "ai-engineering-showcase"
+app = "feedback-intelligence-agent"
 primary_region = "iad"
 
 [build]

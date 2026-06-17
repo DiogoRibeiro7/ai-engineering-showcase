@@ -6,16 +6,16 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from ai_engineering_showcase.citations import build_citations
-from ai_engineering_showcase.guardrails import (
+from feedback_intelligence_agent.citations import build_citations
+from feedback_intelligence_agent.guardrails import (
     SAFE_REFUSAL,
     GuardrailDecision,
     check_context,
     check_input,
     is_suspicious_context,
 )
-from ai_engineering_showcase.llm import LLMProvider
-from ai_engineering_showcase.memory import (
+from feedback_intelligence_agent.llm import LLMProvider
+from feedback_intelligence_agent.memory import (
     ConversationMemory,
     ConversationStore,
     ConversationTurn,
@@ -24,11 +24,11 @@ from ai_engineering_showcase.memory import (
     QueryRewriter,
     new_conversation_id,
 )
-from ai_engineering_showcase.prompts import build_grounded_prompt
-from ai_engineering_showcase.retrieval import Retriever
-from ai_engineering_showcase.schemas import AgentAnswer, Citation, SearchResult, ToolRunRecord
-from ai_engineering_showcase.telemetry import Telemetry, log_event
-from ai_engineering_showcase.tools import ToolError, ToolRegistry, ToolRouter
+from feedback_intelligence_agent.prompts import build_grounded_prompt
+from feedback_intelligence_agent.retrieval import Retriever
+from feedback_intelligence_agent.schemas import AgentAnswer, Citation, SearchResult, ToolRunRecord
+from feedback_intelligence_agent.telemetry import Telemetry, log_event
+from feedback_intelligence_agent.tools import ToolError, ToolRegistry, ToolRouter
 
 
 @dataclass(frozen=True)

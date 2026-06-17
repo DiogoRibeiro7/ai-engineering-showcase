@@ -18,10 +18,10 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from ai_engineering_showcase.agent import FeedbackInsightAgent
-from ai_engineering_showcase.retrieval import Retriever
-from ai_engineering_showcase.schemas import AgentAnswer, EvaluationCase
-from ai_engineering_showcase.telemetry import Telemetry
+from feedback_intelligence_agent.agent import FeedbackInsightAgent
+from feedback_intelligence_agent.retrieval import Retriever
+from feedback_intelligence_agent.schemas import AgentAnswer, EvaluationCase
+from feedback_intelligence_agent.telemetry import Telemetry
 
 REFUSAL_MARKERS = (
     "could not find enough evidence",

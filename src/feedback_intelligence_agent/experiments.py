@@ -25,12 +25,12 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, Field, model_validator
 
-from ai_engineering_showcase import __version__
-from ai_engineering_showcase.agent import FeedbackInsightAgent
-from ai_engineering_showcase.chunking import feedback_to_chunks
-from ai_engineering_showcase.config import RetrieverType, Settings
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.evaluation import (
+from feedback_intelligence_agent import __version__
+from feedback_intelligence_agent.agent import FeedbackInsightAgent
+from feedback_intelligence_agent.chunking import feedback_to_chunks
+from feedback_intelligence_agent.config import RetrieverType, Settings
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.evaluation import (
     AnswerMetrics,
     CaseResult,
     RetrievalMetrics,
@@ -38,9 +38,9 @@ from ai_engineering_showcase.evaluation import (
     evaluate_case_detailed,
     load_evaluation_cases,
 )
-from ai_engineering_showcase.factory import build_llm, build_retriever, chunk_to_embedding_text
-from ai_engineering_showcase.ingestion import load_feedback_csv
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.factory import build_llm, build_retriever, chunk_to_embedding_text
+from feedback_intelligence_agent.ingestion import load_feedback_csv
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 RESULTS_FILENAME = "results.json"
 METRICS_FILENAME = "metrics.json"

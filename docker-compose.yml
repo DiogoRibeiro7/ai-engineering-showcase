@@ -1,5 +1,5 @@
 services:
-  ai-showcase:
+  feedback-agent:
     build: .
     ports:
       - "8000:8000"
@@ -23,7 +23,7 @@ services:
     ports:
       - "4173:4173"
     depends_on:
-      - ai-showcase
+      - feedback-agent
 
   # Optional local vector database. The app defaults to the JSON store and only
   # uses Qdrant when AI_SHOWCASE_VECTOR_STORE=qdrant. Start it with:

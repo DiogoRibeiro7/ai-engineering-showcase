@@ -1,5 +1,5 @@
 {
-  "family": "ai-engineering-showcase",
+  "family": "feedback-intelligence-agent",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
@@ -8,8 +8,8 @@
     "cpuArchitecture": "X86_64",
     "operatingSystemFamily": "LINUX"
   },
-  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ai-showcase-ecs-execution-role",
-  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/ai-showcase-ecs-task-role",
+  "executionRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/feedback-agent-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::<AWS_ACCOUNT_ID>:role/feedback-agent-ecs-task-role",
   "containerDefinitions": [
     {
       "name": "api",
@@ -31,11 +31,11 @@
       "secrets": [
         {
           "name": "OPENAI_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:<REGION>:<AWS_ACCOUNT_ID>:secret:ai-showcase/openai-api-key"
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<AWS_ACCOUNT_ID>:secret:feedback-agent/openai-api-key"
         },
         {
           "name": "ANTHROPIC_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:<REGION>:<AWS_ACCOUNT_ID>:secret:ai-showcase/anthropic-api-key"
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<AWS_ACCOUNT_ID>:secret:feedback-agent/anthropic-api-key"
         }
       ],
       "healthCheck": {
@@ -51,7 +51,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/ai-engineering-showcase",
+          "awslogs-group": "/ecs/feedback-intelligence-agent",
           "awslogs-region": "<REGION>",
           "awslogs-stream-prefix": "api"
         }

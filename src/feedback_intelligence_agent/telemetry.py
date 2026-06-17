@@ -24,7 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Protocol
 
-LOGGER_NAME = "ai_engineering_showcase"
+LOGGER_NAME = "feedback_intelligence_agent"
 
 
 def configure_logging(level: int = logging.INFO) -> None:

@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from ai_engineering_showcase.api import _split_for_streaming, create_app
+from feedback_intelligence_agent.api import _split_for_streaming, create_app
 
 
 def _parse_sse_events(payload: str) -> list[tuple[str, dict[str, Any]]]:

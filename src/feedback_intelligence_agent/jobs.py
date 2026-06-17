@@ -32,13 +32,13 @@ from typing import Protocol
 
 from pydantic import BaseModel, Field
 
-from ai_engineering_showcase.chunking import feedback_to_chunks
-from ai_engineering_showcase.data_contracts import DataContractError
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.factory import chunk_to_embedding_text
-from ai_engineering_showcase.ingestion import FeedbackIngestionError, load_feedback_csv
-from ai_engineering_showcase.telemetry import Telemetry, get_logger
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.chunking import feedback_to_chunks
+from feedback_intelligence_agent.data_contracts import DataContractError
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.factory import chunk_to_embedding_text
+from feedback_intelligence_agent.ingestion import FeedbackIngestionError, load_feedback_csv
+from feedback_intelligence_agent.telemetry import Telemetry, get_logger
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 __all__ = [
     "InMemoryJobStore",

@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Protocol
 
-from ai_engineering_showcase.embeddings import EmbeddingModel
-from ai_engineering_showcase.schemas import DocumentChunk, SearchResult
-from ai_engineering_showcase.vector_store import VectorStore
+from feedback_intelligence_agent.embeddings import EmbeddingModel
+from feedback_intelligence_agent.schemas import DocumentChunk, SearchResult
+from feedback_intelligence_agent.vector_store import VectorStore
 
 
 class Retriever(Protocol):

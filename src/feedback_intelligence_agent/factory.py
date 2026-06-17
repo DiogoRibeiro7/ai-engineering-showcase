@@ -5,28 +5,28 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ai_engineering_showcase.agent import FeedbackInsightAgent
-from ai_engineering_showcase.chunking import feedback_to_chunks
-from ai_engineering_showcase.config import Settings
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.ingestion import load_feedback_csv
-from ai_engineering_showcase.lexical_search import BM25Retriever
-from ai_engineering_showcase.llm import (
+from feedback_intelligence_agent.agent import FeedbackInsightAgent
+from feedback_intelligence_agent.chunking import feedback_to_chunks
+from feedback_intelligence_agent.config import Settings
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.ingestion import load_feedback_csv
+from feedback_intelligence_agent.lexical_search import BM25Retriever
+from feedback_intelligence_agent.llm import (
     AnthropicLLM,
     DeterministicLLM,
     LLMProvider,
     OllamaLLM,
     OpenAIChatLLM,
 )
-from ai_engineering_showcase.memory import JsonConversationStore
-from ai_engineering_showcase.retrieval import HybridRetriever, QueryEngine, Retriever
-from ai_engineering_showcase.schemas import DocumentChunk
-from ai_engineering_showcase.telemetry import JsonlTelemetrySink, Telemetry
-from ai_engineering_showcase.tools import build_default_tools
-from ai_engineering_showcase.vector_store import InMemoryVectorStore, VectorStore
+from feedback_intelligence_agent.memory import JsonConversationStore
+from feedback_intelligence_agent.retrieval import HybridRetriever, QueryEngine, Retriever
+from feedback_intelligence_agent.schemas import DocumentChunk
+from feedback_intelligence_agent.telemetry import JsonlTelemetrySink, Telemetry
+from feedback_intelligence_agent.tools import build_default_tools
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore, VectorStore
 
 if TYPE_CHECKING:
-    from ai_engineering_showcase.jobs import JsonJobStore
+    from feedback_intelligence_agent.jobs import JsonJobStore
 
 
 def build_telemetry(settings: Settings) -> Telemetry:
@@ -56,9 +56,9 @@ def build_job_store(settings: Settings) -> JsonJobStore:
     Jobs are persisted as one JSON file each under ``AI_SHOWCASE_JOB_STORE_PATH``
     (default ``.artifacts/jobs``), so submitted ingestion jobs survive restarts
     and are easy to inspect. Imported lazily to avoid a circular import, since
-    :mod:`ai_engineering_showcase.jobs` reuses :func:`chunk_to_embedding_text`.
+    :mod:`feedback_intelligence_agent.jobs` reuses :func:`chunk_to_embedding_text`.
     """
-    from ai_engineering_showcase.jobs import JsonJobStore
+    from feedback_intelligence_agent.jobs import JsonJobStore
 
     return JsonJobStore(settings.job_store_path)
 
@@ -105,7 +105,7 @@ def build_qdrant_index(settings: Settings, *, telemetry: Telemetry | None = None
     The Qdrant store is imported lazily here so the optional ``qdrant-client``
     dependency is only required when ``AI_SHOWCASE_VECTOR_STORE=qdrant``.
     """
-    from ai_engineering_showcase.qdrant_store import QdrantVectorStore
+    from feedback_intelligence_agent.qdrant_store import QdrantVectorStore
 
     store = QdrantVectorStore(
         dim=settings.embedding_dim,

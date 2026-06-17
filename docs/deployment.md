@@ -24,7 +24,7 @@ remote LLM), extend `/ready` to verify it.
 ## Configuration and secrets
 
 All runtime configuration comes from `AI_SHOWCASE_*` environment variables
-(see [`config.py`](../src/ai_engineering_showcase/config.py) and the table in
+(see [`config.py`](../src/feedback_intelligence_agent/config.py) and the table in
 the [README](../README.md#configuration)). The defaults run a fully local,
 deterministic pipeline that needs **no API keys**.
 
@@ -42,7 +42,7 @@ in the repository:
 
 ```bash
 poetry install
-poetry run uvicorn ai_engineering_showcase.api:create_app --factory --reload
+poetry run uvicorn feedback_intelligence_agent.api:create_app --factory --reload
 curl http://127.0.0.1:8000/health   # {"status":"ok"}
 curl http://127.0.0.1:8000/ready    # {"status":"ready"}
 ```
@@ -56,7 +56,7 @@ file, restarts on failure, and defines a container healthcheck against
 
 ```bash
 # Build the image (tag it 'latest' to match the compose file).
-docker build -t ai-engineering-showcase:latest .
+docker build -t feedback-intelligence-agent:latest .
 
 # Provide configuration via an env file (do NOT commit it).
 cp .env.example deploy/.env.prod
@@ -80,7 +80,7 @@ before registering:
 |---|---|
 | `<AWS_ACCOUNT_ID>` | `123456789012` |
 | `<REGION>` | `us-east-1` |
-| `<IMAGE_URI>` | `123456789012.dkr.ecr.us-east-1.amazonaws.com/ai-showcase:latest` |
+| `<IMAGE_URI>` | `123456789012.dkr.ecr.us-east-1.amazonaws.com/feedback-agent:latest` |
 | `<YOUR_FRONTEND_DOMAIN>` | `app.example.com` |
 
 ```bash

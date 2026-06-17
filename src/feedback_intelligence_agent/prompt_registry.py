@@ -3,7 +3,7 @@
 Prompts are production assets: they are named, versioned, validated against
 their declared variables, and covered by snapshot tests. This module provides
 the generic registry machinery; the actual prompt definitions live in
-``ai_engineering_showcase.prompts``.
+``feedback_intelligence_agent.prompts``.
 """
 
 from __future__ import annotations

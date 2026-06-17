@@ -14,7 +14,7 @@ from typing import Any, Literal
 import pandas as pd
 from pydantic import BaseModel, Field, ValidationError
 
-from ai_engineering_showcase.schemas import FeedbackChannel, FeedbackRecord
+from feedback_intelligence_agent.schemas import FeedbackChannel, FeedbackRecord
 
 REQUIRED_COLUMNS: tuple[str, ...] = (
     "feedback_id",

@@ -30,14 +30,14 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from ai_engineering_showcase.agent import FeedbackInsightAgent
-from ai_engineering_showcase.chunking import feedback_to_chunks
-from ai_engineering_showcase.config import Settings
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.evaluation import load_evaluation_cases
-from ai_engineering_showcase.factory import build_llm, build_retriever, chunk_to_embedding_text
-from ai_engineering_showcase.ingestion import load_feedback_csv
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.agent import FeedbackInsightAgent
+from feedback_intelligence_agent.chunking import feedback_to_chunks
+from feedback_intelligence_agent.config import Settings
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.evaluation import load_evaluation_cases
+from feedback_intelligence_agent.factory import build_llm, build_retriever, chunk_to_embedding_text
+from feedback_intelligence_agent.ingestion import load_feedback_csv
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 RESULTS_JSON_FILENAME = "benchmark_results.json"
 RESULTS_MARKDOWN_FILENAME = "benchmark_results.md"

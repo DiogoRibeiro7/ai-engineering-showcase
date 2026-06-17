@@ -1,6 +1,6 @@
 // Typed client for the AI Engineering Showcase FastAPI backend.
 // The types mirror the Pydantic schemas in
-// src/ai_engineering_showcase/schemas.py.
+// src/feedback_intelligence_agent/schemas.py.
 
 export const API_BASE_URL: string =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";

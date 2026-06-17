@@ -8,18 +8,18 @@ from typing import Annotated
 
 import typer
 
-from ai_engineering_showcase.benchmarking import run_benchmark, write_benchmark_outputs
-from ai_engineering_showcase.citations import render_citations
-from ai_engineering_showcase.config import Settings
-from ai_engineering_showcase.data_contracts import DataContractError, validate_feedback_csv
-from ai_engineering_showcase.evaluation import evaluate_system, load_evaluation_cases
-from ai_engineering_showcase.experiments import (
+from feedback_intelligence_agent.benchmarking import run_benchmark, write_benchmark_outputs
+from feedback_intelligence_agent.citations import render_citations
+from feedback_intelligence_agent.config import Settings
+from feedback_intelligence_agent.data_contracts import DataContractError, validate_feedback_csv
+from feedback_intelligence_agent.evaluation import evaluate_system, load_evaluation_cases
+from feedback_intelligence_agent.experiments import (
     ExperimentConfig,
     collect_run_metadata,
     run_experiment,
     write_experiment_outputs,
 )
-from ai_engineering_showcase.factory import (
+from feedback_intelligence_agent.factory import (
     build_agent,
     build_conversation_store,
     build_index,
@@ -28,16 +28,16 @@ from ai_engineering_showcase.factory import (
     build_telemetry,
     load_or_build_index,
 )
-from ai_engineering_showcase.jobs import JobRequest, run_ingestion_job
-from ai_engineering_showcase.prompt_registry import (
+from feedback_intelligence_agent.jobs import JobRequest, run_ingestion_job
+from feedback_intelligence_agent.prompt_registry import (
     LATEST_VERSION,
     PromptNotFoundError,
     PromptVariableError,
 )
-from ai_engineering_showcase.prompts import PROMPT_REGISTRY
-from ai_engineering_showcase.schemas import ChatResponse
-from ai_engineering_showcase.synthetic_data import SyntheticDataConfig, write_feedback_csv
-from ai_engineering_showcase.telemetry import configure_logging
+from feedback_intelligence_agent.prompts import PROMPT_REGISTRY
+from feedback_intelligence_agent.schemas import ChatResponse
+from feedback_intelligence_agent.synthetic_data import SyntheticDataConfig, write_feedback_csv
+from feedback_intelligence_agent.telemetry import configure_logging
 
 app = typer.Typer(help="AI Engineering Showcase CLI")
 experiment_app = typer.Typer(help="Run repeatable experiments over RAG configurations.")
@@ -374,4 +374,4 @@ def serve(
     """Serve the FastAPI app with Uvicorn."""
     import uvicorn
 
-    uvicorn.run("ai_engineering_showcase.api:create_app", factory=True, host=host, port=port)
+    uvicorn.run("feedback_intelligence_agent.api:create_app", factory=True, host=host, port=port)

@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "ai-engineering-showcase"
+name = "feedback-intelligence-agent"
 version = "0.1.0"
 description = "A production-style AI engineering showcase repository with RAG, evaluation, FastAPI, and local deterministic LLM fallback."
 authors = ["Diogo Ribeiro <hansolo.dj@gmail.com>"]
 readme = "README.md"
-packages = [{ include = "ai_engineering_showcase", from = "src" }]
+packages = [{ include = "feedback_intelligence_agent", from = "src" }]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
@@ -36,7 +36,7 @@ pandas-stubs = "^2.2.2"
 types-pyyaml = "^6.0.12.20260518"
 
 [tool.poetry.scripts]
-ai-showcase = "ai_engineering_showcase.cli:app"
+feedback-agent = "feedback_intelligence_agent.cli:app"
 
 [build-system]
 requires = ["poetry-core>=1.8.0"]

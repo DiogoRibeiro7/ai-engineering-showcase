@@ -25,8 +25,8 @@ from typing import Any, ClassVar, Literal
 
 from pydantic import BaseModel, Field, ValidationError
 
-from ai_engineering_showcase.citations import summarize_evidence
-from ai_engineering_showcase.schemas import DocumentChunk, SearchResult
+from feedback_intelligence_agent.citations import summarize_evidence
+from feedback_intelligence_agent.schemas import DocumentChunk, SearchResult
 
 
 class ToolError(RuntimeError):

@@ -18,9 +18,9 @@ import httpx
 import pytest
 from pydantic import ValidationError
 
-from ai_engineering_showcase.config import Settings
-from ai_engineering_showcase.factory import build_llm
-from ai_engineering_showcase.llm import (
+from feedback_intelligence_agent.config import Settings
+from feedback_intelligence_agent.factory import build_llm
+from feedback_intelligence_agent.llm import (
     AnthropicLLM,
     DeterministicLLM,
     LLMProviderError,

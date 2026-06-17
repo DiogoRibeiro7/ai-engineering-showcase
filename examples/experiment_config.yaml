@@ -1,4 +1,4 @@
-# Example experiment configuration for `ai-showcase experiment run`.
+# Example experiment configuration for `feedback-agent experiment run`.
 # Runs fully locally with the deterministic LLM provider; no API keys needed.
 name: hybrid-baseline
 description: Hybrid retrieval baseline over the sample feedback dataset.

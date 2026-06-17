@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from ai_engineering_showcase.benchmarking import (
+from feedback_intelligence_agent.benchmarking import (
     PHASE_AGENT_RESPONSE,
     PHASE_EMBEDDING,
     PHASE_INDEXING,
@@ -19,7 +19,7 @@ from ai_engineering_showcase.benchmarking import (
     summarize,
     write_benchmark_outputs,
 )
-from ai_engineering_showcase.cli import app
+from feedback_intelligence_agent.cli import app
 
 runner = CliRunner()
 

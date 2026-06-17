@@ -5,14 +5,14 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from ai_engineering_showcase.cli import app
-from ai_engineering_showcase.config import Settings
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.factory import build_retriever, load_or_build_index
-from ai_engineering_showcase.lexical_search import BM25Retriever, tokenize
-from ai_engineering_showcase.retrieval import HybridRetriever, QueryEngine, min_max_normalize
-from ai_engineering_showcase.schemas import DocumentChunk
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.cli import app
+from feedback_intelligence_agent.config import Settings
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.factory import build_retriever, load_or_build_index
+from feedback_intelligence_agent.lexical_search import BM25Retriever, tokenize
+from feedback_intelligence_agent.retrieval import HybridRetriever, QueryEngine, min_max_normalize
+from feedback_intelligence_agent.schemas import DocumentChunk
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 runner = CliRunner()
 

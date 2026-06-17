@@ -16,8 +16,8 @@ from typing import Protocol
 
 import httpx
 
-from ai_engineering_showcase.citations import build_citations, citation_marker
-from ai_engineering_showcase.schemas import SearchResult
+from feedback_intelligence_agent.citations import build_citations, citation_marker
+from feedback_intelligence_agent.schemas import SearchResult
 
 _PROVIDER_SYSTEM_PROMPT = "You produce concise, evidence-grounded analysis."
 

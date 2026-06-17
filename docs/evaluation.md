@@ -5,7 +5,7 @@ RAG systems fail in two distinct places: retrieval can miss the evidence, or gen
 ## Running an evaluation
 
 ```bash
-poetry run ai-showcase evaluate --queries examples/queries.jsonl --output evaluation_report.json
+poetry run feedback-agent evaluate --queries examples/queries.jsonl --output evaluation_report.json
 ```
 
 By default the report is written to `.artifacts/evaluation_report.json` (the `.artifacts/` folder is gitignored). The command prints the same JSON to stdout, so it can be piped into other tooling. Evaluation uses the deterministic local LLM provider, so two runs over the same index and dataset produce identical reports — a requirement for using the report as a CI regression gate.

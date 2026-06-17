@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from ai_engineering_showcase.agent import FeedbackInsightAgent
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.llm import DeterministicLLM
-from ai_engineering_showcase.memory import ConversationTurn, InMemoryConversationStore
-from ai_engineering_showcase.retrieval import QueryEngine
-from ai_engineering_showcase.schemas import DocumentChunk
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.agent import FeedbackInsightAgent
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.llm import DeterministicLLM
+from feedback_intelligence_agent.memory import ConversationTurn, InMemoryConversationStore
+from feedback_intelligence_agent.retrieval import QueryEngine
+from feedback_intelligence_agent.schemas import DocumentChunk
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 
 def build_test_agent() -> FeedbackInsightAgent:

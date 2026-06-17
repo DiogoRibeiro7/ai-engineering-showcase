@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ai_engineering_showcase.jobs import (
+from feedback_intelligence_agent.jobs import (
     InMemoryJobStore,
     JobNotFoundError,
     JobRequest,
@@ -13,7 +13,7 @@ from ai_engineering_showcase.jobs import (
     JsonJobStore,
     run_ingestion_job,
 )
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 SAMPLE_CSV = "data/sample_feedback.csv"
 

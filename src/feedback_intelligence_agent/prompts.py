@@ -8,9 +8,9 @@ by snapshot tests (see ``tests/test_prompt_snapshot.py`` and ``docs/prompts.md``
 
 from __future__ import annotations
 
-from ai_engineering_showcase.citations import build_citations, citation_marker
-from ai_engineering_showcase.prompt_registry import PromptRegistry, PromptTemplate
-from ai_engineering_showcase.schemas import SearchResult
+from feedback_intelligence_agent.citations import build_citations, citation_marker
+from feedback_intelligence_agent.prompt_registry import PromptRegistry, PromptTemplate
+from feedback_intelligence_agent.schemas import SearchResult
 
 SYSTEM_PROMPT = """You are a careful AI product analyst.
 Use only the evidence provided in the context.

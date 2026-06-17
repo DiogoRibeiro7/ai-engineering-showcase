@@ -8,9 +8,9 @@ regression tests that pin its exact content.
 
 Two modules implement the system:
 
-- `src/ai_engineering_showcase/prompt_registry.py` provides the generic machinery: the
+- `src/feedback_intelligence_agent/prompt_registry.py` provides the generic machinery: the
   `PromptTemplate` dataclass and the `PromptRegistry` container.
-- `src/ai_engineering_showcase/prompts.py` defines the actual production prompts and
+- `src/feedback_intelligence_agent/prompts.py` defines the actual production prompts and
   registers them in the module-level `PROMPT_REGISTRY`. The agent always renders prompts
   through this registry.
 
@@ -50,17 +50,17 @@ Templates are validated when they are constructed and when they are rendered:
 List all registered prompts with versions, variables, and changelog notes:
 
 ```bash
-poetry run ai-showcase prompts list
+poetry run feedback-agent prompts list
 ```
 
 Render a prompt. `--var key=value` can be repeated; optional variables fall back to
 their defaults when omitted:
 
 ```bash
-poetry run ai-showcase prompts render --name rag_answer --version latest \
+poetry run feedback-agent prompts render --name rag_answer --version latest \
   --var question="Why are enterprise customers unhappy with onboarding?"
 
-poetry run ai-showcase prompts render --name rag_answer --version v1 \
+poetry run feedback-agent prompts render --name rag_answer --version v1 \
   --var question="Why is onboarding slow?" \
   --var route=onboarding \
   --var "context=citation: [1]\nsource_id: fb-001\ntext: setup took weeks"
@@ -89,5 +89,5 @@ versions remain available after a new version is registered.
 2. Point the code path (e.g. `build_grounded_prompt`) at the new version deliberately.
 3. Add new snapshot files for the new version and update the snapshot tests. The `v1`
    snapshots keep guarding the old version.
-4. Run the evaluation harness (`poetry run ai-showcase evaluate`) to measure the impact
+4. Run the evaluation harness (`poetry run feedback-agent evaluate`) to measure the impact
    before shipping the change.

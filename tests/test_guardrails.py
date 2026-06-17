@@ -5,20 +5,20 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from ai_engineering_showcase.agent import FeedbackInsightAgent
-from ai_engineering_showcase.api import create_app
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.guardrails import (
+from feedback_intelligence_agent.agent import FeedbackInsightAgent
+from feedback_intelligence_agent.api import create_app
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.guardrails import (
     GuardrailDecision,
     check_context,
     check_input,
     is_suspicious_context,
 )
-from ai_engineering_showcase.llm import DeterministicLLM
-from ai_engineering_showcase.retrieval import QueryEngine
-from ai_engineering_showcase.schemas import DocumentChunk
-from ai_engineering_showcase.telemetry import InMemoryTelemetrySink, Telemetry
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.llm import DeterministicLLM
+from feedback_intelligence_agent.retrieval import QueryEngine
+from feedback_intelligence_agent.schemas import DocumentChunk
+from feedback_intelligence_agent.telemetry import InMemoryTelemetrySink, Telemetry
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 # ---------------------------------------------------------------------------
 # Input gate: benign questions

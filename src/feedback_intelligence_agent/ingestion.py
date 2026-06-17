@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ai_engineering_showcase.data_contracts import (
+from feedback_intelligence_agent.data_contracts import (
     REQUIRED_COLUMNS,
     DataContractError,
     validate_feedback_csv,
 )
-from ai_engineering_showcase.schemas import FeedbackRecord
-from ai_engineering_showcase.telemetry import Telemetry
+from feedback_intelligence_agent.schemas import FeedbackRecord
+from feedback_intelligence_agent.telemetry import Telemetry
 
 __all__ = ["REQUIRED_COLUMNS", "FeedbackIngestionError", "load_feedback_csv"]
 

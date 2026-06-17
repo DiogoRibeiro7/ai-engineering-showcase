@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ai_engineering_showcase.config import Settings
-from ai_engineering_showcase.factory import build_agent, build_index
+from feedback_intelligence_agent.config import Settings
+from feedback_intelligence_agent.factory import build_agent, build_index
 
 
 def main() -> None:

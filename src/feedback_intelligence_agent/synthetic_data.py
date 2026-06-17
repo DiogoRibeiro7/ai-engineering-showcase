@@ -7,7 +7,7 @@ external data or paid API. Generation uses a local, deterministically seeded
 the same seed and parameters always yield a byte-identical CSV.
 
 Generated rows use the exact columns required by the feedback data contract
-(:mod:`ai_engineering_showcase.data_contracts`): ``feedback_id``,
+(:mod:`feedback_intelligence_agent.data_contracts`): ``feedback_id``,
 ``customer_segment``, ``channel``, ``rating``, ``text``, and ``created_at``, plus
 an optional ``sentiment`` column. Ratings are derived from the chosen sentiment
 so the dataset is internally consistent.
@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from ai_engineering_showcase.schemas import FeedbackChannel
+from feedback_intelligence_agent.schemas import FeedbackChannel
 
 __all__ = [
     "DEFAULT_CUSTOMER_SEGMENTS",

@@ -6,10 +6,10 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from ai_engineering_showcase.cli import app
-from ai_engineering_showcase.data_contracts import validate_feedback_csv
-from ai_engineering_showcase.ingestion import load_feedback_csv
-from ai_engineering_showcase.synthetic_data import (
+from feedback_intelligence_agent.cli import app
+from feedback_intelligence_agent.data_contracts import validate_feedback_csv
+from feedback_intelligence_agent.ingestion import load_feedback_csv
+from feedback_intelligence_agent.synthetic_data import (
     SENTIMENTS,
     SyntheticDataConfig,
     generate_feedback_rows,

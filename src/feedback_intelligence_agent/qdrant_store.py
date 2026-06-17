@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import numpy.typing as npt
 
-from ai_engineering_showcase.schemas import DocumentChunk, SearchResult
+from feedback_intelligence_agent.schemas import DocumentChunk, SearchResult
 
 if TYPE_CHECKING:  # pragma: no cover - import only for static type checking.
     from qdrant_client import QdrantClient

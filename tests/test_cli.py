@@ -5,7 +5,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from ai_engineering_showcase.cli import app
+from feedback_intelligence_agent.cli import app
 
 runner = CliRunner()
 stdout_runner = CliRunner(mix_stderr=False)

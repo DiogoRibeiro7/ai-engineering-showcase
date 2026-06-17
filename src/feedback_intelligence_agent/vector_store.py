@@ -10,7 +10,7 @@ import numpy as np
 import numpy.typing as npt
 from pydantic import BaseModel, Field
 
-from ai_engineering_showcase.schemas import DocumentChunk, SearchResult
+from feedback_intelligence_agent.schemas import DocumentChunk, SearchResult
 
 
 @runtime_checkable

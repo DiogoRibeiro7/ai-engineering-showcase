@@ -18,10 +18,10 @@ from typing import Any
 import numpy as np
 import pytest
 
-from ai_engineering_showcase.config import Settings
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.factory import load_or_build_index
-from ai_engineering_showcase.schemas import DocumentChunk
+from feedback_intelligence_agent.config import Settings
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.factory import load_or_build_index
+from feedback_intelligence_agent.schemas import DocumentChunk
 
 # ---------------------------------------------------------------------------
 # Fake qdrant_client module + client for unit tests
@@ -140,7 +140,7 @@ def _sample_chunks() -> list[DocumentChunk]:
 
 
 def test_qdrant_store_missing_package(monkeypatch: pytest.MonkeyPatch) -> None:
-    from ai_engineering_showcase.qdrant_store import QdrantStoreError, QdrantVectorStore
+    from feedback_intelligence_agent.qdrant_store import QdrantStoreError, QdrantVectorStore
 
     monkeypatch.setitem(sys.modules, "qdrant_client", None)
     with pytest.raises(QdrantStoreError, match="poetry install --extras qdrant"):
@@ -148,7 +148,7 @@ def test_qdrant_store_missing_package(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_qdrant_store_creates_collection_with_cosine(fake_qdrant: ModuleType) -> None:
-    from ai_engineering_showcase.qdrant_store import QdrantVectorStore
+    from feedback_intelligence_agent.qdrant_store import QdrantVectorStore
 
     client = FakeQdrantClient()
     QdrantVectorStore(dim=32, collection_name="feedback", client=client)
@@ -160,7 +160,7 @@ def test_qdrant_store_creates_collection_with_cosine(fake_qdrant: ModuleType) ->
 
 
 def test_qdrant_store_upsert_payloads(fake_qdrant: ModuleType) -> None:
-    from ai_engineering_showcase.qdrant_store import QdrantVectorStore
+    from feedback_intelligence_agent.qdrant_store import QdrantVectorStore
 
     client = FakeQdrantClient()
     store = QdrantVectorStore(dim=64, client=client)
@@ -183,7 +183,7 @@ def test_qdrant_store_upsert_payloads(fake_qdrant: ModuleType) -> None:
 
 
 def test_qdrant_store_search_maps_to_search_results(fake_qdrant: ModuleType) -> None:
-    from ai_engineering_showcase.qdrant_store import QdrantVectorStore
+    from feedback_intelligence_agent.qdrant_store import QdrantVectorStore
 
     client = FakeQdrantClient()
     store = QdrantVectorStore(dim=64, client=client)
@@ -201,7 +201,7 @@ def test_qdrant_store_search_maps_to_search_results(fake_qdrant: ModuleType) -> 
 
 
 def test_qdrant_store_chunks_roundtrip(fake_qdrant: ModuleType) -> None:
-    from ai_engineering_showcase.qdrant_store import QdrantVectorStore
+    from feedback_intelligence_agent.qdrant_store import QdrantVectorStore
 
     client = FakeQdrantClient()
     store = QdrantVectorStore(dim=64, client=client)
@@ -214,7 +214,7 @@ def test_qdrant_store_chunks_roundtrip(fake_qdrant: ModuleType) -> None:
 
 
 def test_qdrant_store_validates_inputs(fake_qdrant: ModuleType) -> None:
-    from ai_engineering_showcase.qdrant_store import QdrantVectorStore
+    from feedback_intelligence_agent.qdrant_store import QdrantVectorStore
 
     with pytest.raises(ValueError, match="dim must be positive"):
         QdrantVectorStore(dim=0, client=FakeQdrantClient())
@@ -232,7 +232,7 @@ def test_qdrant_store_validates_inputs(fake_qdrant: ModuleType) -> None:
 
 
 def test_factory_defaults_to_json_store(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from ai_engineering_showcase.vector_store import InMemoryVectorStore
+    from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
     monkeypatch.delenv("AI_SHOWCASE_VECTOR_STORE", raising=False)
     settings = Settings(index_path=tmp_path / "vector_store.json")
@@ -245,8 +245,8 @@ def test_factory_defaults_to_json_store(tmp_path: Path, monkeypatch: pytest.Monk
 def test_factory_uses_qdrant_when_configured(
     fake_qdrant: ModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import ai_engineering_showcase.qdrant_store as qdrant_store
-    from ai_engineering_showcase.qdrant_store import QdrantVectorStore
+    import feedback_intelligence_agent.qdrant_store as qdrant_store
+    from feedback_intelligence_agent.qdrant_store import QdrantVectorStore
 
     client = FakeQdrantClient()
     original_init = QdrantVectorStore.__init__
@@ -273,7 +273,7 @@ _QDRANT_TEST = os.environ.get("AI_SHOWCASE_QDRANT_TEST", "").lower() in {"1", "t
 
 @pytest.mark.skipif(not _QDRANT_TEST, reason="set AI_SHOWCASE_QDRANT_TEST=1 to run")
 def test_qdrant_integration_roundtrip() -> None:
-    from ai_engineering_showcase.qdrant_store import QdrantVectorStore
+    from feedback_intelligence_agent.qdrant_store import QdrantVectorStore
 
     url = os.environ.get("AI_SHOWCASE_QDRANT_URL", "http://localhost:6333")
     collection = "ai_showcase_test_" + os.urandom(4).hex()

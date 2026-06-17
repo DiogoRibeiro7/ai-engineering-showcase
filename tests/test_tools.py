@@ -4,13 +4,13 @@ import json
 
 import pytest
 
-from ai_engineering_showcase.agent import FeedbackInsightAgent
-from ai_engineering_showcase.embeddings import HashingEmbeddingModel
-from ai_engineering_showcase.llm import DeterministicLLM
-from ai_engineering_showcase.retrieval import QueryEngine
-from ai_engineering_showcase.schemas import DocumentChunk, SearchResult
-from ai_engineering_showcase.telemetry import InMemoryTelemetrySink, Telemetry
-from ai_engineering_showcase.tools import (
+from feedback_intelligence_agent.agent import FeedbackInsightAgent
+from feedback_intelligence_agent.embeddings import HashingEmbeddingModel
+from feedback_intelligence_agent.llm import DeterministicLLM
+from feedback_intelligence_agent.retrieval import QueryEngine
+from feedback_intelligence_agent.schemas import DocumentChunk, SearchResult
+from feedback_intelligence_agent.telemetry import InMemoryTelemetrySink, Telemetry
+from feedback_intelligence_agent.tools import (
     IssueClusterTool,
     SentimentSummaryTool,
     TicketDraftTool,
@@ -19,7 +19,7 @@ from ai_engineering_showcase.tools import (
     ToolRouter,
     build_default_tools,
 )
-from ai_engineering_showcase.vector_store import InMemoryVectorStore
+from feedback_intelligence_agent.vector_store import InMemoryVectorStore
 
 
 def sample_chunks() -> list[DocumentChunk]:

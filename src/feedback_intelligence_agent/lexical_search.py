@@ -12,7 +12,7 @@ import re
 from collections import Counter
 from collections.abc import Sequence
 
-from ai_engineering_showcase.schemas import DocumentChunk, SearchResult
+from feedback_intelligence_agent.schemas import DocumentChunk, SearchResult
 
 TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9_]+")
 

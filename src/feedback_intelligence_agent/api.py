@@ -12,16 +12,16 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
-from ai_engineering_showcase.config import Settings
-from ai_engineering_showcase.factory import (
+from feedback_intelligence_agent.config import Settings
+from feedback_intelligence_agent.factory import (
     build_agent,
     build_conversation_store,
     build_index,
     build_job_store,
 )
-from ai_engineering_showcase.jobs import JobRequest, JobResult, run_ingestion_job
-from ai_engineering_showcase.memory import ConversationMemory
-from ai_engineering_showcase.schemas import (
+from feedback_intelligence_agent.jobs import JobRequest, JobResult, run_ingestion_job
+from feedback_intelligence_agent.memory import ConversationMemory
+from feedback_intelligence_agent.schemas import (
     AgentAnswer,
     ChatRequest,
     ChatResponse,
@@ -31,7 +31,7 @@ from ai_engineering_showcase.schemas import (
     QueryResponse,
     StreamMetadata,
 )
-from ai_engineering_showcase.telemetry import configure_logging, log_event
+from feedback_intelligence_agent.telemetry import configure_logging, log_event
 
 
 def _sse_event(event: str, data: dict[str, Any]) -> str:

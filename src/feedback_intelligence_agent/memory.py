@@ -27,7 +27,7 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, Field
 
-from ai_engineering_showcase.llm import LLMProvider
+from feedback_intelligence_agent.llm import LLMProvider
 
 _CONVERSATION_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 

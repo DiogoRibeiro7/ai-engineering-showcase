@@ -5,13 +5,13 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from ai_engineering_showcase.cli import app
-from ai_engineering_showcase.data_contracts import (
+from feedback_intelligence_agent.cli import app
+from feedback_intelligence_agent.data_contracts import (
     DataContractError,
     ValidationReport,
     validate_feedback_csv,
 )
-from ai_engineering_showcase.ingestion import FeedbackIngestionError, load_feedback_csv
+from feedback_intelligence_agent.ingestion import FeedbackIngestionError, load_feedback_csv
 
 HEADER = "feedback_id,customer_segment,channel,rating,text,created_at"
 

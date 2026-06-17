@@ -8,7 +8,7 @@ from typing import Any, Literal
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
-from ai_engineering_showcase.guardrails import GuardrailDecision
+from feedback_intelligence_agent.guardrails import GuardrailDecision
 
 
 class FeedbackChannel(str, Enum):
